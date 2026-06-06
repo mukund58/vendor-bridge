@@ -9,7 +9,10 @@ import {
   FiDollarSign,
   FiCheckSquare,
   FiShoppingBag,
-  FiTrendingUp
+  FiTrendingUp,
+  FiSettings,
+  FiLogOut,
+  FiUser
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -19,26 +22,34 @@ const getFilteredNavItems = (role) => {
     case 'ADMIN':
       return [
         { name: 'Dashboard', path: '/dashboard', icon: FiHome },
-        { name: 'Vendor Management', path: '/vendors', icon: FiUsers },
-        { name: 'Reports', path: '/reports', icon: FiTrendingUp }
+        { name: 'Vendors', path: '/vendors', icon: FiUsers },
+        { name: 'Reports', path: '/reports', icon: FiTrendingUp },
+        { name: 'Users', path: '/users', icon: FiUsers },
+        { name: 'Settings', path: '/vendor-settings', icon: FiSettings }
       ];
     case 'VENDOR':
       return [
-        { name: 'Quotations', path: '/quotations', icon: FiDollarSign },
+        { name: 'Dashboard', path: '/dashboard', icon: FiHome },
+        { name: 'Quotation Submission', path: '/quotation-submission', icon: FiDollarSign },
         { name: 'RFQ Status', path: '/rfqs', icon: FiFileText },
-        { name: 'Purchase Orders', path: '/purchase-orders', icon: FiShoppingBag }
+        { name: 'Purchase Orders', path: '/purchase-orders', icon: FiShoppingBag },
+        { name: 'Profile', path: '/profile', icon: FiUser }
       ];
     case 'MANAGER':
       return [
+        { name: 'Dashboard', path: '/dashboard', icon: FiHome },
         { name: 'Approvals', path: '/approvals', icon: FiCheckSquare },
-        { name: 'Reports', path: '/reports', icon: FiTrendingUp }
+        { name: 'Reports', path: '/reports', icon: FiTrendingUp },
+        { name: 'Activity Logs', path: '/activity', icon: FiActivity }
       ];
     case 'PROCUREMENT_OFFICER':
       return [
-        { name: 'RFQs', path: '/rfqs', icon: FiFileText },
+        { name: 'Dashboard', path: '/dashboard', icon: FiHome },
+        { name: 'RFQ', path: '/rfqs', icon: FiFileText },
         { name: 'Quotations', path: '/quotations', icon: FiDollarSign },
-        { name: 'PO', path: '/purchase-orders', icon: FiShoppingBag },
-        { name: 'Invoice', path: '/invoices', icon: FiDollarSign }
+        { name: 'Purchase Orders', path: '/purchase-orders', icon: FiShoppingBag },
+        { name: 'Invoices', path: '/invoices', icon: FiDollarSign },
+        { name: 'Activity Logs', path: '/activity', icon: FiActivity }
       ];
     default:
       return [];
@@ -46,7 +57,7 @@ const getFilteredNavItems = (role) => {
 };
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const menuItems = user ? getFilteredNavItems(user.role) : [];
 
   return (
@@ -107,6 +118,21 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 </NavLink>
               );
             })}
+            
+            {/* Persistent Logout Link at bottom of menu items list */}
+            <button
+              onClick={() => {
+                logout();
+                if (window.innerWidth < 992) {
+                  toggleSidebar();
+                }
+              }}
+              className="sidebar-link d-flex align-items-center gap-3 px-3 py-2.5 rounded-3 text-decoration-none transition-all border-0 bg-transparent text-start w-100 mt-2"
+              style={{ color: 'inherit' }}
+            >
+              <FiLogOut className="menu-icon text-danger" size={18} />
+              <span className="menu-label font-medium text-danger">Logout</span>
+            </button>
           </nav>
         </div>
 
@@ -120,3 +146,4 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 };
 
 export default Sidebar;
+

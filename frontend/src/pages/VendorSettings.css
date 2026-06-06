@@ -1,0 +1,20 @@
+/* Vendor settings custom styling */
+.settings-section-card {
+  transition: all 0.2s ease;
+}
+
+.settings-section-card:hover {
+  transform: none; /* Keep settings pages steady */
+}
+
+.input-group-custom textarea.form-control {
+  background-color: transparent !important;
+  color: #fff;
+  border: none;
+  font-size: 0.875rem;
+}
+
+.input-group-custom textarea.form-control:focus {
+  box-shadow: none;
+  background-color: transparent;
+}

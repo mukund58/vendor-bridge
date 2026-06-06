@@ -1,0 +1,61 @@
+/* Profile Settings Page custom styles */
+.profile-avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: var(--accent-color);
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--bg-card);
+  transition: all 0.2s ease;
+}
+
+.profile-avatar-overlay:hover {
+  background-color: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.profile-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-card:hover {
+  transform: none; /* keep flat for settings */
+}
+
+/* Password Modal Custom glass layout */
+.modal-overlay-glass {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(9, 13, 22, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content-card {
+  width: 450px;
+  max-width: 90%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}

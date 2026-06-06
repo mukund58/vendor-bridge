@@ -1,0 +1,12 @@
+/* Admin Users page visual styling */
+.users-grid-row {
+  animation: fadeIn 0.25s ease forwards;
+}
+
+.user-profile-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+}

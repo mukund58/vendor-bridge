@@ -128,12 +128,12 @@ const Navbar = ({ toggleSidebar }) => {
             style={{ backgroundColor: 'var(--bg-card)', zIndex: 1050 }}
           >
             <li>
-              <a className="dropdown-item rounded py-2 text-white" href="#profile" onClick={(e) => e.preventDefault()}>
+              <a className="dropdown-item rounded py-2 text-white" href="#profile" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>
                 Profile Settings
               </a>
             </li>
             <li>
-              <a className="dropdown-item rounded py-2 text-white" href="#company" onClick={(e) => e.preventDefault()}>
+              <a className="dropdown-item rounded py-2 text-white" href="#company" onClick={(e) => { e.preventDefault(); navigate('/vendor-settings'); }}>
                 Company Details
               </a>
             </li>
