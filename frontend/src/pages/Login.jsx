@@ -12,11 +12,29 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
+
+  const validateFields = () => {
+    const errors = {};
+    if (!email.trim()) {
+      errors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+    if (!password) {
+      errors.password = 'Password is required.';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    if (!validateFields()) return;
     setLoading(true);
 
     try {
@@ -59,6 +77,16 @@ const Login = () => {
             <span className="fw-medium">{error}</span>
           </div>
         )}
+        {fieldErrors.email && !error && (
+          <div className="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning small py-2 px-3 mb-2 rounded-3">
+            <span className="fw-medium">{fieldErrors.email}</span>
+          </div>
+        )}
+        {fieldErrors.password && !error && (
+          <div className="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning small py-2 px-3 mb-2 rounded-3">
+            <span className="fw-medium">{fieldErrors.password}</span>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="d-flex flex-column gap-3">
@@ -74,9 +102,10 @@ const Login = () => {
                 className="bg-transparent border-0 text-white w-100 fs-7 outline-none"
                 placeholder="name@company.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: '' })); }}
               />
             </div>
+            {fieldErrors.email && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.email}</span>}
           </div>
 
           {/* Password field */}
@@ -91,7 +120,7 @@ const Login = () => {
                 className="bg-transparent border-0 text-white w-100 fs-7 outline-none"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: '' })); }}
               />
               <button
                 type="button"
@@ -102,6 +131,7 @@ const Login = () => {
                 {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
               </button>
             </div>
+            {fieldErrors.password && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.password}</span>}
           </div>
 
           {/* Remember and Forgot options */}
@@ -154,30 +184,23 @@ const Login = () => {
             <button
               type="button"
               className="btn btn-secondary btn-sm px-2 py-1 fs-8"
-              onClick={() => handlePrefill('admin@vendorbridge.com', 'password123')}
+              onClick={() => handlePrefill('adminlogs@test.com', 'Password123')}
             >
               Admin
             </button>
             <button
               type="button"
               className="btn btn-secondary btn-sm px-2 py-1 fs-8"
-              onClick={() => handlePrefill('vendor@vendorbridge.com', 'password123')}
+              onClick={() => handlePrefill('tester@integlog.com', 'Password123')}
             >
               Vendor
             </button>
             <button
               type="button"
               className="btn btn-secondary btn-sm px-2 py-1 fs-8"
-              onClick={() => handlePrefill('manager@vendorbridge.com', 'password123')}
+              onClick={() => handlePrefill('manager@test.com', 'Password123')}
             >
               Manager
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm px-2 py-1 fs-8"
-              onClick={() => handlePrefill('officer@vendorbridge.com', 'password123')}
-            >
-              Officer
             </button>
           </div>
         </div>

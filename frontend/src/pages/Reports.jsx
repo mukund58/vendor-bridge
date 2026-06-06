@@ -67,14 +67,19 @@ const Reports = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [exporting, setExporting] = useState(null); // 'pdf' or 'excel' or null
+  const [loadError, setLoadError] = useState('');
 
   // Triggered when date filter updates - logs the endpoint parameters
   useEffect(() => {
     const loadReportData = async () => {
+      setLoadError('');
+      let hasError = false;
+
       try {
         const summary = await fetchReportsSummary(startDate, endDate);
         setReportsSummary(summary);
       } catch (err) {
+        hasError = true;
         console.error("Failed to load reports summary:", err);
       }
 
@@ -82,6 +87,7 @@ const Reports = () => {
         const vendors = await fetchVendorPerformance(startDate, endDate);
         setVendorPerformance(vendors);
       } catch (err) {
+        hasError = true;
         console.error("Failed to load vendor performance scorecard:", err);
       }
 
@@ -89,7 +95,12 @@ const Reports = () => {
         const trend = await fetchMonthlyTrend(startDate, endDate);
         setSpendingTrend(trend);
       } catch (err) {
+        hasError = true;
         console.error("Failed to load monthly trend:", err);
+      }
+
+      if (hasError) {
+        setLoadError('Some report data failed to load. Please try refreshing or adjusting the date range.');
       }
     };
     loadReportData();
@@ -162,6 +173,13 @@ const Reports = () => {
 
   return (
     <div className="d-flex flex-column gap-4">
+      {/* API Error Banner */}
+      {loadError && (
+        <div className="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning small py-2 px-3 rounded-3 d-flex align-items-center gap-2">
+          <FiAlertCircle size={16} />
+          <span className="fw-medium">{loadError}</span>
+        </div>
+      )}
       {/* Title Header Section */}
       <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
         <div>

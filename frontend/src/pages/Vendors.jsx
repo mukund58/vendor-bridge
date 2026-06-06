@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { FiPlus, FiSearch, FiSliders, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import './Vendors.css';
 import { fetchVendors, addVendor, updateVendorDetails, blockVendor } from '../services/vendorService';
@@ -16,11 +17,17 @@ const Vendors = () => {
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [formData, setFormData] = useState({
     id: '',
-    name: '',
+    companyName: '',
     gstNumber: '',
     category: 'Raw Materials',
+    contactPerson: '',
+    email: '',
+    phone: '',
     status: 'ACTIVE'
   });
+  const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const location = useLocation();
 
   const loadVendors = async () => {
     try {
@@ -34,6 +41,14 @@ const Vendors = () => {
   useEffect(() => {
     loadVendors();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('add') === 'true') {
+      openAddModal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location, vendors]);
 
   // Extract categories dynamically
   const categories = Array.from(new Set(vendors.map(v => v.category)));
@@ -56,8 +71,9 @@ const Vendors = () => {
 
   // Filter logic matching search term and category status
   const filteredVendors = vendors.filter((vendor) => {
+    const name = vendor.companyName || vendor.name || '';
     const matchesSearch = 
-      (vendor.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (vendor.gstNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter ? vendor.category === categoryFilter : true;
@@ -77,17 +93,33 @@ const Vendors = () => {
     setModalMode('add');
     setFormData({
       id: '',
-      name: '',
+      companyName: '',
       gstNumber: '',
       category: 'Raw Materials',
+      contactPerson: '',
+      email: '',
+      phone: '',
       status: 'ACTIVE'
     });
+    setFormError('');
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const openEditModal = (vendor) => {
     setModalMode('edit');
-    setFormData({ ...vendor });
+    setFormData({
+      id: vendor.id,
+      companyName: vendor.companyName || vendor.name || '',
+      gstNumber: vendor.gstNumber || '',
+      category: vendor.category || 'Raw Materials',
+      contactPerson: vendor.contactPerson || '',
+      email: vendor.email || '',
+      phone: vendor.phone || '',
+      status: vendor.status || 'ACTIVE'
+    });
+    setFormError('');
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -105,8 +137,33 @@ const Vendors = () => {
     }
   };
 
+  const validateVendorForm = () => {
+    const errors = {};
+    if (!formData.companyName.trim()) errors.companyName = 'Company name is required.';
+    if (!formData.gstNumber.trim()) {
+      errors.gstNumber = 'GSTIN is required.';
+    } else if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstNumber)) {
+      errors.gstNumber = 'Invalid GSTIN format (e.g. 27AAACA1111A1Z1).';
+    }
+    if (!formData.contactPerson.trim()) errors.contactPerson = 'Contact person is required.';
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Enter a valid email address.';
+    }
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required.';
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      errors.phone = 'Phone must be exactly 10 digits.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
+    if (!validateVendorForm()) return;
 
     try {
       if (modalMode === 'add') {
@@ -117,6 +174,10 @@ const Vendors = () => {
       setIsModalOpen(false);
       await loadVendors();
     } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.errors 
+        ? Object.values(err.response.data.errors).flat().join(', ')
+        : 'Failed to submit vendor form';
+      setFormError(msg);
       console.error('Failed to submit vendor form', err);
     }
   };
@@ -254,7 +315,7 @@ const Vendors = () => {
                   const statusMeta = getStatusMeta(vendor.status);
                   return (
                     <tr key={vendor.id}>
-                      <td className="fw-semibold text-white">{vendor.name}</td>
+                      <td className="fw-semibold text-white">{vendor.companyName || vendor.name}</td>
                       <td className="font-monospace text-secondary small">{vendor.gstNumber}</td>
                       <td>{vendor.category}</td>
                       <td>
@@ -346,10 +407,15 @@ const Vendors = () => {
             </div>
 
             <form onSubmit={handleFormSubmit} className="d-flex flex-column gap-3.5">
+              {formError && (
+                <div className="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small py-2 px-3 rounded-3">
+                  <span className="fw-medium">{formError}</span>
+                </div>
+              )}
               <div className="row g-3">
-                {/* Vendor Name */}
+                {/* Company Name */}
                 <div className="col-12">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-name-input">Vendor Partner Name</label>
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-name-input">Company Name *</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <input 
                       id="vendor-name-input"
@@ -357,28 +423,81 @@ const Vendors = () => {
                       required 
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
                       placeholder="e.g. Apex Metals Ltd"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                     />
                   </div>
+                  {fieldErrors.companyName && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.companyName}</span>}
+                </div>
+
+                {/* Contact Person */}
+                <div className="col-12 col-sm-6">
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-contact-input">Contact Person *</label>
+                  <div className="form-input-wrapper px-3 py-2 rounded-3">
+                    <input 
+                      id="vendor-contact-input"
+                      type="text" 
+                      required 
+                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
+                      placeholder="e.g. John Smith"
+                      value={formData.contactPerson}
+                      onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                    />
+                  </div>
+                  {fieldErrors.contactPerson && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.contactPerson}</span>}
+                </div>
+
+                {/* Email */}
+                <div className="col-12 col-sm-6">
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-email-input">Email Address *</label>
+                  <div className="form-input-wrapper px-3 py-2 rounded-3">
+                    <input 
+                      id="vendor-email-input"
+                      type="email" 
+                      required 
+                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
+                      placeholder="vendor@company.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                  {fieldErrors.email && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.email}</span>}
+                </div>
+
+                {/* Phone */}
+                <div className="col-12 col-sm-6">
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-phone-input">Phone (10 digits) *</label>
+                  <div className="form-input-wrapper px-3 py-2 rounded-3">
+                    <input 
+                      id="vendor-phone-input"
+                      type="text" 
+                      required 
+                      maxLength={10}
+                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
+                      placeholder="9876543210"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                    />
+                  </div>
+                  {fieldErrors.phone && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.phone}</span>}
                 </div>
 
                 {/* GST Number */}
-                <div className="col-12">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-gst-input">GSTIN Number</label>
+                <div className="col-12 col-sm-6">
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-gst-input">GSTIN Number *</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <input 
                       id="vendor-gst-input"
                       type="text" 
                       required 
-                      pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+                      maxLength={15}
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none font-monospace" 
-                      placeholder="e.g. 27AAACA1111A1Z1"
+                      placeholder="27AAACA1111A1Z1"
                       value={formData.gstNumber}
                       onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value.toUpperCase() })}
                     />
                   </div>
-                  <span className="text-muted extra-small mt-1 d-inline-block">Format: 15-digit Alpha-Numeric GSTIN</span>
+                  {fieldErrors.gstNumber && <span className="text-warning extra-small mt-1 d-block">{fieldErrors.gstNumber}</span>}
                 </div>
 
                 {/* Category Selector */}
@@ -397,11 +516,7 @@ const Vendors = () => {
                       <option value="Office Goods" style={{ backgroundColor: 'var(--bg-secondary)' }}>Office Goods</option>
                       <option value="Heavy Equipment" style={{ backgroundColor: 'var(--bg-secondary)' }}>Heavy Equipment</option>
                       <option value="Logistics" style={{ backgroundColor: 'var(--bg-secondary)' }}>Logistics</option>
-                      <option value="Construction" style={{ backgroundColor: 'var(--bg-secondary)' }}>Construction</option>
-                      <option value="Consulting" style={{ backgroundColor: 'var(--bg-secondary)' }}>Consulting</option>
-                      <option value="R&D" style={{ backgroundColor: 'var(--bg-secondary)' }}>R&D</option>
-                      <option value="Marketing" style={{ backgroundColor: 'var(--bg-secondary)' }}>Marketing</option>
-                      <option value="Utilities" style={{ backgroundColor: 'var(--bg-secondary)' }}>Utilities</option>
+                      <option value="Supplies" style={{ backgroundColor: 'var(--bg-secondary)' }}>Supplies</option>
                     </select>
                   </div>
                 </div>

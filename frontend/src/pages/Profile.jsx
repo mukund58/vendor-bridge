@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { 
   FiUser, 
@@ -15,6 +15,18 @@ import {
 } from 'react-icons/fi';
 import './Profile.css';
 
+const COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Argentina','Australia','Austria','Bangladesh',
+  'Belgium','Brazil','Canada','Chile','China','Colombia','Croatia','Czech Republic',
+  'Denmark','Egypt','Ethiopia','Finland','France','Germany','Ghana','Greece',
+  'Hungary','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Japan',
+  'Jordan','Kenya','Malaysia','Mexico','Morocco','Netherlands','New Zealand',
+  'Nigeria','Norway','Pakistan','Peru','Philippines','Poland','Portugal','Romania',
+  'Russia','Saudi Arabia','Singapore','South Africa','South Korea','Spain',
+  'Sri Lanka','Sweden','Switzerland','Thailand','Turkey','Ukraine','United Arab Emirates',
+  'United Kingdom','United States','Vietnam','Zimbabwe'
+];
+
 const Profile = () => {
   const { user } = useAuth();
   
@@ -23,15 +35,31 @@ const Profile = () => {
   const [profileData, setProfileData] = useState({
     fullName: user ? user.name : 'Sarah Jenkins',
     email: user ? user.email : 'sarah.j@vendorbridge.com',
-    phone: '+1 (555) 019-2834',
-    country: 'United States',
+    phone: user?.phone || '+1 (555) 019-2834',
+    country: user?.country || 'United States',
     role: user ? user.role : 'ADMIN',
     joinedDate: 'January 15, 2026',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop'
+    avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop'
   });
 
   // Temporarily holds changes during editing
   const [tempData, setTempData] = useState({ ...profileData });
+
+  useEffect(() => {
+    if (user) {
+      const updatedData = {
+        fullName: user.name || 'Sarah Jenkins',
+        email: user.email || 'sarah.j@vendorbridge.com',
+        phone: user.phone || '+1 (555) 019-2834',
+        country: user.country || 'United States',
+        role: user.role || 'ADMIN',
+        joinedDate: 'January 15, 2026',
+        avatar: user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop'
+      };
+      setProfileData(updatedData);
+      setTempData(updatedData);
+    }
+  }, [user]);
 
   // Password Change Modal states
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -221,15 +249,30 @@ const Profile = () => {
                   <label className="text-secondary small mb-1.5 fw-medium" htmlFor="country">Country</label>
                   <div className="input-group-custom d-flex align-items-center px-3 py-2 rounded-3 border border-light bg-secondary">
                     <FiGlobe className="text-muted me-2.5" size={16} />
-                    <input 
-                      id="country"
-                      name="country"
-                      type="text"
-                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none"
-                      disabled={!isEditing}
-                      value={isEditing ? tempData.country : profileData.country}
-                      onChange={handleInputChange}
-                    />
+                    {isEditing ? (
+                      <select
+                        id="country"
+                        name="country"
+                        className="bg-transparent border-0 text-white w-100 fs-7 outline-none cursor-pointer"
+                        style={{ backgroundColor: 'var(--bg-secondary)' }}
+                        value={tempData.country}
+                        onChange={handleInputChange}
+                      >
+                        <option value="" style={{ backgroundColor: 'var(--bg-card)' }}>Select country...</option>
+                        {COUNTRIES.map(c => (
+                          <option key={c} value={c} style={{ backgroundColor: 'var(--bg-card)' }}>{c}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input 
+                        id="country"
+                        name="country"
+                        type="text"
+                        className="bg-transparent border-0 text-white w-100 fs-7 outline-none"
+                        disabled
+                        value={profileData.country}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

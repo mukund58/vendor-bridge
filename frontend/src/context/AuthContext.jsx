@@ -43,7 +43,10 @@ export const AuthProvider = ({ children }) => {
           id: response.user.id,
           name: response.user.name,
           role: response.user.role,
-          email: email
+          email: response.user.email || email,
+          phone: response.user.phone || '',
+          country: response.user.country || '',
+          avatar: response.user.avatar || null
         };
 
         setToken(response.token);
@@ -74,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         phone: formData.phone || '',
         country: formData.country || '',
         role: formData.role || 'VENDOR',
+        avatar: formData.avatar || null,
         password: formData.password
       };
 

@@ -35,16 +35,34 @@ export const fetchMonthlyTrend = async (startDate, endDate) => {
   return response.data;
 };
 
-export const exportReportPdf = async () => {
-  console.log('Axios GET /reports/export?format=pdf triggered.');
-  // Simulating the actual file payload blob download
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+export const exportReportPdf = async (startDate, endDate) => {
+  const response = await api.get('/reports/export', {
+    params: { format: 'pdf', startDate, endDate },
+    responseType: 'blob'
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `procurement_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
   return true;
 };
 
-export const exportReportExcel = async () => {
-  console.log('Axios GET /reports/export?format=excel triggered.');
-  // Simulating the actual file payload blob download
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+export const exportReportExcel = async (startDate, endDate) => {
+  const response = await api.get('/reports/export', {
+    params: { format: 'excel', startDate, endDate },
+    responseType: 'blob'
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `procurement_report_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
   return true;
 };

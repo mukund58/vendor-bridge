@@ -78,7 +78,22 @@ const QuotationSubmission = () => {
     
     // Validate that all items have price
     if (bidItems.some(item => item.unitPrice === '')) {
-      alert('Please fill out prices for all line items before submitting.');
+      triggerToast('⚠️ Please fill out prices for all line items before submitting.');
+      return;
+    }
+
+    if (deliveryDays < 1 || deliveryDays > 365) {
+      triggerToast('⚠️ Delivery days must be between 1 and 365.');
+      return;
+    }
+
+    if (gstRate < 0 || gstRate > 100) {
+      triggerToast('⚠️ GST rate must be between 0% and 100%.');
+      return;
+    }
+
+    if (!selectedRfqId) {
+      triggerToast('⚠️ Please select an RFQ to bid on.');
       return;
     }
 
@@ -97,7 +112,7 @@ const QuotationSubmission = () => {
 
     try {
       await submitQuotation(selectedRfqId, payload);
-      triggerToast('Bidding Quotation submitted successfully!');
+      triggerToast('✅ Bidding Quotation submitted successfully!');
       
       // Reset input fields
       setDeliveryDays(10);
@@ -105,6 +120,8 @@ const QuotationSubmission = () => {
       setBidRemarks('');
       setBidItems(prev => prev.map(item => ({ ...item, unitPrice: '' })));
     } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to submit quotation.';
+      triggerToast(`⚠️ ${msg}`);
       console.error(err);
     } finally {
       setIsSubmitting(false);
