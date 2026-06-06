@@ -9,6 +9,11 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
+    public DbSet<RFQ> RFQs { get; set; }
+    public DbSet<RFQItem> RFQItems { get; set; }
+    public DbSet<RFQVendor> RFQVendors { get; set; }
+    public DbSet<Quotation> Quotations { get; set; }
+    public DbSet<QuotationItem> QuotationItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
