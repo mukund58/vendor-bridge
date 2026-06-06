@@ -26,9 +26,10 @@ public class QuotationService : IQuotationService
     {
         var rfq = await _context.RFQs
             .Include(r => r.RFQVendors)
+            .Include(r => r.Items)
             .FirstOrDefaultAsync(r => r.Id == dto.RFQId);
 
-        if (rfq == null || rfq.Status != RFQStatus.Published) return null;
+        if (rfq == null || (rfq.Status != RFQStatus.Published && rfq.Status != RFQStatus.QuotationReceived)) return null;
         if (!rfq.RFQVendors.Any(v => v.VendorId == vendorId)) return null;
 
         var quotation = new Quotation

@@ -17,5 +17,6 @@ public class Vendor
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public VendorStatus Status { get; set; } = VendorStatus.ACTIVE;
+    public double Rating { get; set; } = 4.0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

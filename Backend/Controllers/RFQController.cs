@@ -51,4 +51,12 @@ public class RFQController : ControllerBase
         if (!result) return BadRequest(new { message = "Could not publish RFQ. Ensure it exists and is in Draft status." });
         return NoContent();
     }
+
+    [HttpGet("{id}/comparison")]
+    public async Task<IActionResult> GetRFQComparison(int id)
+    {
+        var comparison = await _rfqService.GetRFQComparisonAsync(id);
+        if (comparison == null) return NotFound();
+        return Ok(comparison);
+    }
 }
