@@ -21,10 +21,12 @@ public interface IApprovalService
 public class ApprovalService : IApprovalService
 {
     private readonly AppDbContext _context;
+    private readonly IPurchaseOrderService _purchaseOrderService;
 
-    public ApprovalService(AppDbContext context)
+    public ApprovalService(AppDbContext context, IPurchaseOrderService purchaseOrderService)
     {
         _context = context;
+        _purchaseOrderService = purchaseOrderService;
     }
 
     public async Task<IEnumerable<ApprovalDto>> GetPendingApprovalsAsync()
@@ -103,6 +105,20 @@ public class ApprovalService : IApprovalService
                 {
                     q.Status = QuotationStatus.Rejected;
                 }
+            }
+
+            // Save first to apply selected status to DB
+            await _context.SaveChangesAsync();
+
+            // Auto generate PO and Invoice
+            try
+            {
+                await _purchaseOrderService.CreatePOFromQuotationAsync(approval.QuotationId);
+                approval.Status = ApprovalStatus.PO_GENERATED;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to auto-generate PO/Invoice on L2 approval: {ex.Message}");
             }
         }
         else

@@ -63,6 +63,9 @@ builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IRFQService, RFQService>();
 builder.Services.AddScoped<IQuotationService, QuotationService>();
 builder.Services.AddScoped<IApprovalService, ApprovalService>();
+builder.Services.AddScoped<IPONumberGenerator, PONumberGenerator>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForVendorOdooHackathon1234!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
