@@ -1,0 +1,36 @@
+/* Layout styles for PO cards */
+.po-action-btn {
+  transition: transform 0.2s;
+}
+
+.po-action-btn:hover {
+  transform: scale(1.05);
+}
+
+.po-badge-status {
+  padding: 0.35em 0.65em;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.po-status-pending {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.po-status-acknowledged {
+  background-color: rgba(6, 182, 212, 0.15);
+  color: #67e8f9;
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.po-status-delivered {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}

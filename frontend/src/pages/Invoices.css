@@ -1,0 +1,50 @@
+/* Invoice slip visual styling */
+.invoice-slip {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.2);
+}
+
+.invoice-header {
+  border-bottom: 2px dashed var(--border-color);
+  padding-bottom: 1.5rem;
+}
+
+.invoice-bill-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.invoice-items-summary {
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 1rem;
+}
+
+.invoice-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed var(--border-color);
+}
+
+.status-watermark {
+  font-size: 3.5rem;
+  font-weight: 800;
+  opacity: 0.05;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.invoice-actions-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
