@@ -58,7 +58,8 @@ public class VendorService : IVendorService
             ContactPerson = dto.ContactPerson,
             Email = dto.Email,
             Phone = dto.Phone,
-            Status = VendorStatus.ACTIVE
+            Status = VendorStatus.ACTIVE,
+            Rating = dto.Rating
         };
 
         _context.Vendors.Add(vendor);
@@ -78,6 +79,7 @@ public class VendorService : IVendorService
         vendor.ContactPerson = dto.ContactPerson;
         vendor.Email = dto.Email;
         vendor.Phone = dto.Phone;
+        vendor.Rating = dto.Rating;
 
         await _context.SaveChangesAsync();
         return MapToDto(vendor);
@@ -107,6 +109,7 @@ public class VendorService : IVendorService
         ContactPerson = v.ContactPerson,
         Email = v.Email,
         Phone = v.Phone,
-        Status = v.Status.ToString()
+        Status = v.Status.ToString(),
+        Rating = v.Rating
     };
 }

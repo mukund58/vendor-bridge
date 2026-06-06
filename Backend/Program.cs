@@ -47,7 +47,16 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=app.db"));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("Data Source=") || connectionString.Contains("app.db"))
+    {
+        var pgHost = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+        var pgPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "vendor1234";
+        connectionString = $"Host={pgHost};Port=5432;Database=procurement;Username=admin;Password={pgPassword}";
+    }
+    options.UseNpgsql(connectionString);
+});
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IVendorService, VendorService>();

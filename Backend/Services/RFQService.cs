@@ -11,6 +11,7 @@ public interface IRFQService
     Task<IEnumerable<RFQDto>> GetRFQsAsync();
     Task<RFQDto?> GetRFQByIdAsync(int id);
     Task<bool> PublishRFQAsync(int id);
+    Task<RFQComparisonDto?> GetRFQComparisonAsync(int id);
 }
 
 public class RFQService : IRFQService
@@ -78,6 +79,72 @@ public class RFQService : IRFQService
         rfq.Status = RFQStatus.Published;
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<RFQComparisonDto?> GetRFQComparisonAsync(int id)
+    {
+        var rfq = await _context.RFQs.FindAsync(id);
+        if (rfq == null) return null;
+
+        var quotations = await _context.Quotations
+            .Include(q => q.Vendor)
+            .Where(q => q.RFQId == id)
+            .ToListAsync();
+
+        var comparisonDto = new RFQComparisonDto
+        {
+            RfqId = id
+        };
+
+        if (!quotations.Any())
+        {
+            return comparisonDto;
+        }
+
+        var lowestPrice = quotations.Min(q => q.TotalPrice);
+        var fastestDelivery = quotations.Min(q => q.DeliveryDays);
+
+        comparisonDto.Quotations = quotations.Select(q => new QuotationComparisonDto
+        {
+            QuotationId = q.Id,
+            Vendor = q.Vendor?.CompanyName ?? "Unknown",
+            Amount = q.TotalPrice,
+            DeliveryDays = q.DeliveryDays,
+            Rating = q.Vendor?.Rating ?? 4.0,
+            IsLowestPrice = q.TotalPrice == lowestPrice,
+            IsFastestDelivery = q.DeliveryDays == fastestDelivery
+        }).ToList();
+
+        var maxPrice = quotations.Max(q => q.TotalPrice);
+        var minPrice = lowestPrice;
+        var maxDelivery = quotations.Max(q => q.DeliveryDays);
+        var minDelivery = fastestDelivery;
+
+        QuotationComparisonDto? bestQuote = null;
+        double highestScore = -1.0;
+
+        foreach (var qDto in comparisonDto.Quotations)
+        {
+            double priceScore = maxPrice == minPrice ? 1.0 : (double)((maxPrice - qDto.Amount) / (maxPrice - minPrice));
+            double deliveryScore = maxDelivery == minDelivery ? 1.0 : (double)(maxDelivery - qDto.DeliveryDays) / (maxDelivery - minDelivery);
+            double ratingScore = qDto.Rating / 5.0;
+
+            double totalScore = (priceScore * 0.5) + (deliveryScore * 0.3) + (ratingScore * 0.2);
+
+            if (totalScore > highestScore)
+            {
+                highestScore = totalScore;
+                bestQuote = qDto;
+            }
+        }
+
+        if (bestQuote != null)
+        {
+            comparisonDto.WinnerSuggestion = bestQuote.Vendor;
+            comparisonDto.LowestPrice = bestQuote.IsLowestPrice;
+        }
+
+        return comparisonDto;
     }
 
     private static RFQDto MapToDto(RFQ rfq) => new RFQDto
