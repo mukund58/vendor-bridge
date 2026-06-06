@@ -84,10 +84,67 @@ const Reports = () => {
     console.log(`Axios GET ${endpoint} initiated.`);
     
     setTimeout(() => {
-      setExporting(null);
-      setToastMessage(`Export Successful! Generated and downloaded report in ${format.toUpperCase()} format.`);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      try {
+        let fileContent = '';
+        let mimeType = '';
+        let fileName = '';
+
+        if (format === 'csv' || format === 'excel') {
+          // Generate a simple CSV spreadsheet representing Reports Summary & Vendor Performance Scorecard
+          fileName = `procurement_report_${new Date().toISOString().slice(0,10)}.csv`;
+          mimeType = 'text/csv;charset=utf-8;';
+          fileContent = 'VendorBridge ERP Procurement Report\n';
+          fileContent += `Date Range,${startDate} to ${endDate}\n\n`;
+          fileContent += `Total Spend,Active Vendors,PO Fulfillment %,Overdue Invoices\n`;
+          fileContent += `"${reportsSummary.totalSpend}","${reportsSummary.activeVendors}","${reportsSummary.poFulfillment}","${reportsSummary.overdueInvoices}"\n\n`;
+          fileContent += 'Vendor Performance Scorecard\n';
+          fileContent += 'Vendor,Compliance %,Delivery %,Quality %\n';
+          vendorPerformance.forEach(v => {
+            fileContent += `"${v.name}","${v.compliance}","${v.delivery}","${v.quality}"\n`;
+          });
+        } else {
+          // Generate a mockup text document representing PDF
+          fileName = `procurement_report_${new Date().toISOString().slice(0,10)}.pdf`;
+          mimeType = 'text/plain;charset=utf-8;';
+          fileContent = '==================================================\n';
+          fileContent += '          VENDORBRIDGE ERP REPORT (PDF MOCK)       \n';
+          fileContent += '==================================================\n';
+          fileContent += `Generated On: ${new Date().toLocaleString()}\n`;
+          fileContent += `Date Range:   ${startDate} to ${endDate}\n`;
+          fileContent += '--------------------------------------------------\n';
+          fileContent += 'KPI SUMMARY:\n';
+          fileContent += `  - Total Spend:       $${reportsSummary.totalSpend.toLocaleString()}\n`;
+          fileContent += `  - Active Vendors:    ${reportsSummary.activeVendors}\n`;
+          fileContent += `  - PO Fulfillment:    ${reportsSummary.poFulfillment}%\n`;
+          fileContent += `  - Overdue Invoices:  ${reportsSummary.overdueInvoices}\n`;
+          fileContent += '--------------------------------------------------\n';
+          fileContent += 'VENDOR PERFORMANCE SCORECARD:\n';
+          vendorPerformance.forEach(v => {
+            fileContent += `  * ${v.name.padEnd(20)}: Compliance ${v.compliance}%, Delivery ${v.delivery}%, Quality ${v.quality}%\n`;
+          });
+          fileContent += '==================================================\n';
+        }
+
+        const blob = new Blob([fileContent], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        setToastMessage(`Export Successful! Generated and downloaded ${fileName}.`);
+      } catch (err) {
+        console.error('Export download error:', err);
+        setToastMessage(`Export failed: ${err.message}`);
+      } finally {
+        setExporting(null);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 4000);
+      }
     }, 1200);
   };
 

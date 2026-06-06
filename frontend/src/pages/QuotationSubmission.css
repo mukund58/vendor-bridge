@@ -1,0 +1,16 @@
+/* Quotation Submission styles */
+.rfq-info-badge {
+  font-size: 0.725rem;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.65rem;
+}
+
+.submission-item-row {
+  border-bottom: 1.5px dashed var(--border-color);
+  padding-bottom: 1.25rem;
+}
+
+.submission-item-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}

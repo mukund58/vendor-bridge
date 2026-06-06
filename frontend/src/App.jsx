@@ -15,6 +15,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import VendorSettings from './pages/VendorSettings';
+import Users from './pages/Users';
+import QuotationSubmission from './pages/QuotationSubmission';
 
 function App() {
   return (
@@ -36,7 +38,7 @@ function App() {
             
             {/* Dashboard Children Views with role guards */}
             <Route path="dashboard" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER', 'VENDOR']}>
                 <Dashboard />
               </ProtectedRoute>
             } />
@@ -45,9 +47,19 @@ function App() {
                 <Vendors />
               </ProtectedRoute>
             } />
+            <Route path="users" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <Users />
+              </ProtectedRoute>
+            } />
             <Route path="rfqs" element={
               <ProtectedRoute allowedRoles={['VENDOR', 'PROCUREMENT_OFFICER']}>
                 <RFQs />
+              </ProtectedRoute>
+            } />
+            <Route path="quotation-submission" element={
+              <ProtectedRoute allowedRoles={['VENDOR']}>
+                <QuotationSubmission />
               </ProtectedRoute>
             } />
             <Route path="quotations" element={
@@ -76,7 +88,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="activity" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ProtectedRoute allowedRoles={['PROCUREMENT_OFFICER', 'MANAGER']}>
                 <ActivityLogs />
               </ProtectedRoute>
             } />
@@ -101,3 +113,4 @@ function App() {
 }
 
 export default App;
+
