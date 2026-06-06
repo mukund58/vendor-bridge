@@ -72,6 +72,16 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForVendorOdooHackathon1234!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -108,6 +118,8 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
