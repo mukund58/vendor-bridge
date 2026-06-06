@@ -1,7 +1,21 @@
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { FiMenu, FiBell, FiSearch, FiChevronDown } from 'react-icons/fi';
 import './Navbar.css';
 
 const Navbar = ({ toggleSidebar }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    logout();
+    navigate('/login');
+  };
+
+  const userName = user ? user.name : 'Sarah Jenkins';
+  const userRole = user ? user.role : 'Procurement Admin';
+
   return (
     <header className="navbar-header glass border-bottom border-light d-flex align-items-center justify-content-between px-4">
       {/* Left section: Toggle Menu & Search */}
@@ -102,9 +116,9 @@ const Navbar = ({ toggleSidebar }) => {
                 height={36}
               />
             </div>
-            <div className="user-details-wrapper d-none d-lg-flex flex-column">
-              <span className="user-name text-white fs-7 fw-semibold lh-1">Sarah Jenkins</span>
-              <span className="user-role text-muted fs-8">Procurement Admin</span>
+            <div className="user-details-wrapper d-none d-lg-flex flex-column text-start">
+              <span className="user-name text-white fs-7 fw-semibold lh-1">{userName}</span>
+              <span className="user-role text-muted fs-8 mt-1">{userRole}</span>
             </div>
             <FiChevronDown className="text-muted d-none d-lg-inline-block" size={14} />
           </div>
@@ -114,12 +128,12 @@ const Navbar = ({ toggleSidebar }) => {
             style={{ backgroundColor: 'var(--bg-card)', zIndex: 1050 }}
           >
             <li>
-              <a className="dropdown-item rounded py-2 text-white" href="#profile">
+              <a className="dropdown-item rounded py-2 text-white" href="#profile" onClick={(e) => e.preventDefault()}>
                 Profile Settings
               </a>
             </li>
             <li>
-              <a className="dropdown-item rounded py-2 text-white" href="#company">
+              <a className="dropdown-item rounded py-2 text-white" href="#company" onClick={(e) => e.preventDefault()}>
                 Company Details
               </a>
             </li>
@@ -127,7 +141,7 @@ const Navbar = ({ toggleSidebar }) => {
               <hr className="dropdown-divider border-light" />
             </li>
             <li>
-              <a className="dropdown-item rounded py-2 text-danger" href="#logout">
+              <a className="dropdown-item rounded py-2 text-danger" href="#logout" onClick={handleLogout}>
                 Sign Out
               </a>
             </li>

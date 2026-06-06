@@ -1,9 +1,54 @@
 import { NavLink } from 'react-router-dom';
-import { navigationItems } from '../data/navigation';
-import { FiX, FiActivity } from 'react-icons/fi';
+import { useAuth } from '../hooks/useAuth';
+import { 
+  FiX, 
+  FiActivity,
+  FiHome,
+  FiUsers,
+  FiFileText,
+  FiDollarSign,
+  FiCheckSquare,
+  FiShoppingBag,
+  FiTrendingUp
+} from 'react-icons/fi';
 import './Sidebar.css';
 
+// Construct dynamic menus aligned with role permissions
+const getFilteredNavItems = (role) => {
+  switch (role) {
+    case 'ADMIN':
+      return [
+        { name: 'Dashboard', path: '/dashboard', icon: FiHome },
+        { name: 'Vendor Management', path: '/vendors', icon: FiUsers },
+        { name: 'Reports', path: '/reports', icon: FiTrendingUp }
+      ];
+    case 'VENDOR':
+      return [
+        { name: 'Quotations', path: '/quotations', icon: FiDollarSign },
+        { name: 'RFQ Status', path: '/rfqs', icon: FiFileText },
+        { name: 'Purchase Orders', path: '/purchase-orders', icon: FiShoppingBag }
+      ];
+    case 'MANAGER':
+      return [
+        { name: 'Approvals', path: '/approvals', icon: FiCheckSquare },
+        { name: 'Reports', path: '/reports', icon: FiTrendingUp }
+      ];
+    case 'PROCUREMENT_OFFICER':
+      return [
+        { name: 'RFQs', path: '/rfqs', icon: FiFileText },
+        { name: 'Quotations', path: '/quotations', icon: FiDollarSign },
+        { name: 'PO', path: '/purchase-orders', icon: FiShoppingBag },
+        { name: 'Invoice', path: '/invoices', icon: FiDollarSign }
+      ];
+    default:
+      return [];
+  }
+};
+
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const { user } = useAuth();
+  const menuItems = user ? getFilteredNavItems(user.role) : [];
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -39,7 +84,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {/* Sidebar Menu Items */}
         <div className="sidebar-menu flex-grow-1 p-3">
           <nav className="nav flex-column gap-1">
-            {navigationItems.map((item) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
