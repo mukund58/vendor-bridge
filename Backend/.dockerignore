@@ -1,0 +1,16 @@
+**/.git
+**/.github
+**/.vs
+**/.vscode
+**/.idea
+**/bin
+**/obj
+**/node_modules
+**/.env
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/appsettings.Development.json
+Dockerfile
+.dockerignore
+global.json
