@@ -1,6 +1,6 @@
 import api from './api';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const initialVendors = [
   { id: 1, name: 'Apex Metals Ltd', gstNumber: '27AAACA1111A1Z1', category: 'Raw Materials', status: 'ACTIVE' },

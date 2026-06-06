@@ -1,6 +1,6 @@
 import api from './api';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const initialRFQs = [
   { id: 1, title: 'Raw Steel Sheet Coils', category: 'Raw Materials', description: 'Grade A coils', deadline: '2026-06-15', submissions: 3, status: 'Active' },

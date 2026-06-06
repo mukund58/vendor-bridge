@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiFileText, 
   FiCheckSquare, 
@@ -12,6 +12,7 @@ import {
   FiInfo
 } from 'react-icons/fi';
 import './ActivityLogs.css';
+import api from '../services/api';
 
 // Mock logs conforming exactly to GET /activities API structure
 const mockActivities = [
@@ -32,21 +33,30 @@ const initialNotifications = [
 ];
 
 const ActivityLogs = () => {
-  const [activities] = useState(mockActivities);
+  const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [activeFilter, setActiveFilter] = useState('ALL'); // ALL, RFQ, APPROVAL, INVOICE, PURCHASE ORDER
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchActivities = async () => {
+    try {
+      const endpoint = activeFilter === 'ALL' 
+        ? '/activities' 
+        : `/activities?type=${activeFilter}`;
+      const response = await api.get(endpoint);
+      setActivities(response.data);
+    } catch (error) {
+      console.error("Failed to fetch activities:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivities();
+  }, [activeFilter]);
+
   // Handle filter changes (Simulates GET /activities?type=...)
   const handleFilterChange = (filterType) => {
     setActiveFilter(filterType);
-    
-    // Log API endpoint requests in the console for Axios readiness
-    const endpoint = filterType === 'ALL' 
-      ? '/activities' 
-      : `/activities?type=${filterType}`;
-      
-    console.log(`Axios GET ${endpoint} requested.`);
   };
 
   const handleSearch = (e) => {
