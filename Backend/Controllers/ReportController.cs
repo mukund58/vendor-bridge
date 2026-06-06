@@ -18,24 +18,33 @@ public class ReportController : ControllerBase
         _reportService = reportService;
     }
 
+    // Npgsql requires DateTimeKind.Utc — query string dates arrive as Unspecified
+    private static DateTime? ToUtc(DateTime? dt)
+    {
+        if (dt == null) return null;
+        return dt.Value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc)
+            : dt.Value.ToUniversalTime();
+    }
+
     [HttpGet("summary")]
     public async Task<IActionResult> GetSummary([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
     {
-        var summary = await _reportService.GetReportsSummaryAsync(startDate, endDate);
+        var summary = await _reportService.GetReportsSummaryAsync(ToUtc(startDate), ToUtc(endDate));
         return Ok(summary);
     }
 
     [HttpGet("vendors")]
     public async Task<IActionResult> GetVendors([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
     {
-        var vendors = await _reportService.GetVendorPerformanceAsync(startDate, endDate);
+        var vendors = await _reportService.GetVendorPerformanceAsync(ToUtc(startDate), ToUtc(endDate));
         return Ok(vendors);
     }
 
     [HttpGet("monthly-trend")]
     public async Task<IActionResult> GetMonthlyTrend([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
     {
-        var trend = await _reportService.GetMonthlyTrendAsync(startDate, endDate);
+        var trend = await _reportService.GetMonthlyTrendAsync(ToUtc(startDate), ToUtc(endDate));
         return Ok(trend);
     }
 
@@ -47,7 +56,7 @@ public class ReportController : ControllerBase
             return BadRequest(new { message = "Format query parameter is required." });
         }
 
-        var data = await _reportService.ExportReportAsync(format, startDate, endDate);
+        var data = await _reportService.ExportReportAsync(format, ToUtc(startDate), ToUtc(endDate));
         
         string contentType;
         string fileDownloadName;
@@ -66,3 +75,4 @@ public class ReportController : ControllerBase
         return File(data, contentType, fileDownloadName);
     }
 }
+
