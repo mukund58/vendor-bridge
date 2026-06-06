@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { 
   FiPlus, 
   FiX, 
@@ -15,6 +16,8 @@ import { fetchAllQuotations } from '../services/quotationService';
 import { createInvoice } from '../services/invoiceService';
 
 const PurchaseOrders = () => {
+  const { user } = useAuth();
+  const role = user?.role;
   const [pos, setPos] = useState([]);
   const [selectedPoId, setSelectedPoId] = useState(null);
   const [quotations, setQuotations] = useState([]);
@@ -80,8 +83,13 @@ const PurchaseOrders = () => {
   const handleGenerateInvoice = async (po) => {
     try {
       await createInvoice(po.id);
-      alert(`Invoice generated for PO ${po.po_number}. Redirecting to Invoices...`);
-      navigate('/invoices');
+      if (role === 'PROCUREMENT_OFFICER') {
+        alert(`Invoice generated for PO ${po.po_number}. Redirecting to Invoices...`);
+        navigate('/invoices');
+      } else {
+        alert(`Invoice generated successfully for PO ${po.po_number}!`);
+        await loadData();
+      }
     } catch (err) {
       console.error("Failed to generate invoice", err);
     }

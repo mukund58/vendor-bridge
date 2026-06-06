@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FiUsers, 
   FiFileText, 
@@ -27,8 +28,12 @@ import {
   Bar
 } from 'recharts';
 import { fetchDashboardSummary } from '../services/dashboardService';
+import { useAuth } from '../hooks/useAuth';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,12 +102,24 @@ const Dashboard = () => {
           <p className="text-secondary small mb-0">Control panel for bidding timelines, vendor audits, and payouts.</p>
         </div>
         <div className="d-flex gap-2">
-          <button type="button" className="btn btn-secondary btn-sm d-flex align-items-center gap-2">
-            <FiShare2 size={14} /> Export Report
-          </button>
-          <button type="button" className="btn btn-primary btn-sm px-3 fw-medium">
-            New RFQ
-          </button>
+          {(role === 'ADMIN' || role === 'MANAGER') && (
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-sm d-flex align-items-center gap-2"
+              onClick={() => navigate('/reports')}
+            >
+              <FiShare2 size={14} /> Export Report
+            </button>
+          )}
+          {(role === 'VENDOR' || role === 'PROCUREMENT_OFFICER') && (
+            <button 
+              type="button" 
+              className="btn btn-primary btn-sm px-3 fw-medium"
+              onClick={() => navigate('/rfqs?create=true')}
+            >
+              New RFQ
+            </button>
+          )}
         </div>
       </div>
 
@@ -203,9 +220,15 @@ const Dashboard = () => {
                 <h5 className="text-white mb-1 fw-semibold fs-6">Recent Requests for Quotations (RFQs)</h5>
                 <p className="text-secondary extra-small mb-0">Ongoing tender invitations and submission tallies</p>
               </div>
-              <button type="button" className="btn btn-secondary btn-sm d-flex align-items-center gap-1.5">
-                View RFQs <FiExternalLink />
-              </button>
+              {(role === 'VENDOR' || role === 'PROCUREMENT_OFFICER') && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm d-flex align-items-center gap-1.5"
+                  onClick={() => navigate('/rfqs')}
+                >
+                  View RFQs <FiExternalLink />
+                </button>
+              )}
             </div>
 
             <div className="table-responsive border-0">
@@ -249,9 +272,15 @@ const Dashboard = () => {
                 <h5 className="text-white mb-1 fw-semibold fs-6">Recent Purchase Orders (POs)</h5>
                 <p className="text-secondary extra-small mb-0">Active supplier delivery slips and processing status</p>
               </div>
-              <button type="button" className="btn btn-secondary btn-sm d-flex align-items-center gap-1.5">
-                View POs <FiExternalLink />
-              </button>
+              {(role === 'VENDOR' || role === 'PROCUREMENT_OFFICER') && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm d-flex align-items-center gap-1.5"
+                  onClick={() => navigate('/purchase-orders')}
+                >
+                  View POs <FiExternalLink />
+                </button>
+              )}
             </div>
 
             <div className="table-responsive border-0">
@@ -381,6 +410,31 @@ const Dashboard = () => {
           </div>
 
         </div>
+      </div>
+
+      {/* Bottom Quick Action Row from wireframe */}
+      <div className="d-flex flex-wrap gap-3 mt-4 pt-4 border-top border-light justify-content-start">
+        <button 
+          type="button" 
+          className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
+          onClick={() => navigate('/rfqs?create=true')}
+        >
+          + New RFQ
+        </button>
+        <button 
+          type="button" 
+          className="btn btn-secondary d-flex align-items-center gap-2 px-4 py-2"
+          onClick={() => navigate('/vendors?add=true')}
+        >
+          Add Vendor
+        </button>
+        <button 
+          type="button" 
+          className="btn btn-secondary d-flex align-items-center gap-2 px-4 py-2"
+          onClick={() => navigate('/invoices')}
+        >
+          View Invoices
+        </button>
       </div>
     </div>
   );

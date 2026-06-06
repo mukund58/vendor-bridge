@@ -109,11 +109,12 @@ const Navbar = ({ toggleSidebar }) => {
           >
             <div className="avatar-wrapper rounded-circle border border-2 border-primary overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop"
+                src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop"}
                 alt="User Avatar"
                 className="img-fluid"
                 width={36}
                 height={36}
+                style={{ objectFit: 'cover', width: '36px', height: '36px' }}
               />
             </div>
             <div className="user-details-wrapper d-none d-lg-flex flex-column text-start">

@@ -53,6 +53,7 @@ public class AuthService : IAuthService
             Phone = request.Phone,
             Country = request.Country,
             Role = request.Role,
+            Avatar = request.Avatar,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
         };
 
@@ -71,7 +72,11 @@ public class AuthService : IAuthService
         {
             Id = user.Id,
             Name = user.Name,
-            Role = user.Role
+            Role = user.Role,
+            Email = user.Email,
+            Phone = user.Phone,
+            Country = user.Country,
+            Avatar = user.Avatar
         };
     }
 
@@ -104,7 +109,11 @@ public class AuthService : IAuthService
             {
                 Id = user.Id,
                 Name = user.Name,
-                Role = user.Role
+                Role = user.Role,
+                Email = user.Email,
+                Phone = user.Phone,
+                Country = user.Country,
+                Avatar = user.Avatar
             }
         };
     }

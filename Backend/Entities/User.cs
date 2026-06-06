@@ -10,6 +10,7 @@ public class User
     public string Country { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string? Avatar { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public string Name => $"{FirstName} {LastName}".Trim();

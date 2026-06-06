@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FiPlus, 
   FiTrash2, 
@@ -22,6 +23,14 @@ const RFQs = () => {
   const [vendors, setVendors] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('create') === 'true') {
+      setIsCreating(true);
+    }
+  }, [location]);
 
   // Form State matching API payload fields exactly
   const [title, setTitle] = useState('');
@@ -36,6 +45,7 @@ const RFQs = () => {
 
   // Search Filter state
   const [listFilter, setListFilter] = useState('');
+  const [formError, setFormError] = useState('');
 
   const loadData = async () => {
     try {
@@ -106,8 +116,20 @@ const RFQs = () => {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
-  // Stepper flows
+  // Stepper flows — with step-level validation
   const handleNextStep = () => {
+    setFormError('');
+    if (currentStep === 1) {
+      if (!title.trim()) { setFormError('RFQ title is required.'); return; }
+      if (!deadline) { setFormError('Deadline date is required.'); return; }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(deadline) <= today) { setFormError('Deadline must be a future date.'); return; }
+    }
+    if (currentStep === 2) {
+      if (items.some(it => !it.itemName.trim())) { setFormError('All items must have a name.'); return; }
+      if (items.some(it => it.quantity < 1)) { setFormError('Item quantity must be at least 1.'); return; }
+    }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
@@ -132,12 +154,17 @@ const RFQs = () => {
   };
 
   const submitRfq = async (status) => {
+    setFormError('');
+    if (selectedVendors.length === 0) {
+      setFormError('Please select at least one vendor.');
+      return;
+    }
     const payload = {
       title,
       category,
       description,
       deadline,
-      vendors: selectedVendors, // array of IDs
+      vendors: selectedVendors,
       items: items.map(({ itemName, quantity, unit }) => ({ itemName, quantity, unit }))
     };
 
@@ -149,6 +176,8 @@ const RFQs = () => {
       await loadData();
       resetForm();
     } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to submit RFQ. Please check your inputs.';
+      setFormError(msg);
       console.error('Failed to submit RFQ', err);
     }
   };
@@ -284,6 +313,11 @@ const RFQs = () => {
 
           {/* Stepper Wizard Panels */}
           <div className="wizard-panels-content mt-4.5 py-2.5">
+            {formError && (
+              <div className="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning small py-2 px-3 mb-3 rounded-3">
+                <span className="fw-medium">{formError}</span>
+              </div>
+            )}
             
             {/* STEP 1: RFQ Details Form */}
             {currentStep === 1 && (
