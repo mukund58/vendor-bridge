@@ -12,6 +12,7 @@ public interface IRFQService
     Task<RFQDto?> GetRFQByIdAsync(int id);
     Task<bool> PublishRFQAsync(int id);
     Task<RFQComparisonDto?> GetRFQComparisonAsync(int id);
+    Task<bool> SelectQuotationAsync(int rfqId, SelectWinningQuotationDto dto);
 }
 
 public class RFQService : IRFQService
@@ -145,6 +146,62 @@ public class RFQService : IRFQService
         }
 
         return comparisonDto;
+    }
+
+    public async Task<bool> SelectQuotationAsync(int rfqId, SelectWinningQuotationDto dto)
+    {
+        var rfq = await _context.RFQs.FindAsync(rfqId);
+        if (rfq == null) return false;
+        
+        if (rfq.Status != RFQStatus.Published && rfq.Status != RFQStatus.QuotationReceived && rfq.Status != RFQStatus.UnderReview)
+            return false;
+
+        var quotation = await _context.Quotations.FindAsync(dto.QuotationId);
+        if (quotation == null || quotation.RFQId != rfqId) return false;
+
+        rfq.Status = RFQStatus.UnderReview;
+        quotation.Status = QuotationStatus.UnderReview;
+
+        var existingApproval = await _context.Approvals
+            .FirstOrDefaultAsync(a => a.RFQId == rfqId && (a.Status == ApprovalStatus.PENDING || a.Status == ApprovalStatus.L1_APPROVED || a.Status == ApprovalStatus.L2_APPROVED));
+        
+        if (existingApproval == null)
+        {
+            var approval = new Approval
+            {
+                RFQId = rfqId,
+                QuotationId = dto.QuotationId,
+                Level = 1,
+                Status = ApprovalStatus.PENDING
+            };
+            _context.Approvals.Add(approval);
+        }
+        else
+        {
+            if (existingApproval.QuotationId != dto.QuotationId)
+            {
+                existingApproval.Status = ApprovalStatus.REJECTED;
+                existingApproval.Remarks = "Cancelled by selection of a different quotation.";
+                
+                var oldQuotation = await _context.Quotations.FindAsync(existingApproval.QuotationId);
+                if (oldQuotation != null)
+                {
+                    oldQuotation.Status = QuotationStatus.Rejected;
+                }
+
+                var newApproval = new Approval
+                {
+                    RFQId = rfqId,
+                    QuotationId = dto.QuotationId,
+                    Level = 1,
+                    Status = ApprovalStatus.PENDING
+                };
+                _context.Approvals.Add(newApproval);
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private static RFQDto MapToDto(RFQ rfq) => new RFQDto
