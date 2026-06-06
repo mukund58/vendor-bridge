@@ -52,7 +52,7 @@ export const navigationItems = [
   },
   {
     name: 'Activity Logs',
-    path: '/logs',
+    path: '/activity',
     icon: FiActivity,
   },
 ];

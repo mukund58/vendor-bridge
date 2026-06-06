@@ -9,17 +9,21 @@ import PurchaseOrders from './pages/PurchaseOrders';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import ActivityLogs from './pages/ActivityLogs';
+import Login from './pages/Login';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Wrap all dashboard routes under the main layout */}
+        {/* Standalone Login Route (separate from dashboard layout) */}
+        <Route path="/login" element={<Login />} />
+        
+        {/* Main Dashboard Panel Layout */}
         <Route path="/" element={<DashboardLayout />}>
-          {/* Redirect index path to /dashboard */}
+          {/* Redirect root URL to /dashboard */}
           <Route index element={<Navigate to="/dashboard" replace />} />
           
-          {/* Sub-routes */}
+          {/* Dashboard Children Views */}
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="vendors" element={<Vendors />} />
           <Route path="rfqs" element={<RFQs />} />
@@ -28,9 +32,9 @@ function App() {
           <Route path="purchase-orders" element={<PurchaseOrders />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="logs" element={<ActivityLogs />} />
+          <Route path="activity" element={<ActivityLogs />} />
           
-          {/* Catch-all fallback inside layout */}
+          {/* Fallback route within dashboard layout */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
