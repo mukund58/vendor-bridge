@@ -62,6 +62,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IRFQService, RFQService>();
 builder.Services.AddScoped<IQuotationService, QuotationService>();
+builder.Services.AddScoped<IApprovalService, ApprovalService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForVendorOdooHackathon1234!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

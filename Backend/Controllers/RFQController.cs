@@ -59,4 +59,17 @@ public class RFQController : ControllerBase
         if (comparison == null) return NotFound();
         return Ok(comparison);
     }
+
+    [HttpPost("{id}/select-quotation")]
+    public async Task<IActionResult> SelectWinningQuotation(int id, [FromBody] SelectWinningQuotationDto dto)
+    {
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        if (role != "PROCUREMENT_OFFICER" && role != "MANAGER" && role != "ADMIN")
+            return Forbid();
+
+        var result = await _rfqService.SelectQuotationAsync(id, dto);
+        if (!result) return BadRequest(new { message = "Could not select quotation. Ensure RFQ is in a valid state and the quotation belongs to it." });
+
+        return Ok(new { success = true });
+    }
 }

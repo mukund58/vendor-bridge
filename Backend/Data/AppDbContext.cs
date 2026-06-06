@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<RFQVendor> RFQVendors { get; set; }
     public DbSet<Quotation> Quotations { get; set; }
     public DbSet<QuotationItem> QuotationItems { get; set; }
+    public DbSet<Approval> Approvals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,26 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<Approval>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            
+            entity.HasOne(e => e.RFQ)
+                .WithMany()
+                .HasForeignKey(e => e.RFQId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Quotation)
+                .WithMany()
+                .HasForeignKey(e => e.QuotationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Approver)
+                .WithMany()
+                .HasForeignKey(e => e.ApproverId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
