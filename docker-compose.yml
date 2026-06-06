@@ -4,10 +4,15 @@ services:
     container_name: api
     ports:
       - "5000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=postgres
+      - Smtp__Host=host.docker.internal
+      - Smtp__Port=1025
+      - Smtp__EnableSsl=false
     depends_on:
       - postgres
 

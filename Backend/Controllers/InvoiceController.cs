@@ -1,7 +1,10 @@
+using Backend.Data;
 using Backend.DTOs;
+using Backend.Entities;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace Backend.Controllers;
@@ -12,10 +15,20 @@ namespace Backend.Controllers;
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
+    private readonly IPdfService _pdfService;
+    private readonly IEmailService _emailService;
+    private readonly AppDbContext _context;
 
-    public InvoiceController(IInvoiceService invoiceService)
+    public InvoiceController(
+        IInvoiceService invoiceService,
+        IPdfService pdfService,
+        IEmailService emailService,
+        AppDbContext context)
     {
         _invoiceService = invoiceService;
+        _pdfService = pdfService;
+        _emailService = emailService;
+        _context = context;
     }
 
     [HttpPost]
@@ -69,16 +82,45 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("{id}/pdf")]
-    public IActionResult GetInvoicePdf(int id)
+    public async Task<IActionResult> GetInvoicePdf(int id)
     {
-        // Simple mock PDF endpoint to prevent 404s
-        return Ok("Dummy PDF Content for Invoice " + id);
+        var invoice = await _context.Invoices
+            .Include(i => i.Items)
+            .Include(i => i.Vendor)
+            .Include(i => i.PurchaseOrder)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null)
+        {
+            return NotFound(new { message = "Invoice not found." });
+        }
+
+        var pdfBytes = await _pdfService.GenerateInvoicePdfAsync(invoice);
+        return File(pdfBytes, "application/pdf", $"{invoice.InvoiceNumber}.pdf");
     }
 
     [HttpPost("{id}/email")]
-    public IActionResult SendInvoiceEmail(int id)
+    public async Task<IActionResult> SendInvoiceEmail(int id)
     {
-        // Simple mock Email endpoint to prevent 404s
-        return Ok(new { success = true, message = "Email dispatched for invoice " + id });
+        var invoice = await _context.Invoices
+            .Include(i => i.Items)
+            .Include(i => i.Vendor)
+            .Include(i => i.PurchaseOrder)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null)
+        {
+            return NotFound(new { message = "Invoice not found." });
+        }
+
+        var pdfBytes = await _pdfService.GenerateInvoicePdfAsync(invoice);
+        var success = await _emailService.SendInvoiceEmailAsync(invoice, pdfBytes);
+
+        if (!success)
+        {
+            return StatusCode(500, new { message = "Failed to dispatch email." });
+        }
+
+        return Ok(new { success = true, message = "Email dispatched successfully with invoice PDF attached." });
     }
 }
