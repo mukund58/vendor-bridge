@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiPlus, 
   FiTrash2, 
@@ -13,26 +13,13 @@ import {
   FiFileText
 } from 'react-icons/fi';
 import './RFQs.css';
-
-// Initial listing dataset matching GET /rfqs backend format
-const initialRFQs = [
-  { id: 1, title: 'Raw Steel Sheet Coils', category: 'Raw Materials', description: 'Grade A coils', deadline: '2026-06-15', submissions: 3, status: 'Active' },
-  { id: 2, title: 'Cloud server hardware racks', category: 'IT Solutions', description: 'Power racks', deadline: '2026-06-18', submissions: 1, status: 'Pending Review' },
-  { id: 3, title: 'Warehouse Forklifts replacement', category: 'Heavy Equipment', description: 'Dual fork lifts', deadline: '2026-06-25', submissions: 0, status: 'Draft' }
-];
-
-// Mock suppliers list with integer IDs matching DB schemas
-const mockVendors = [
-  { id: 1, name: 'Apex Metals Ltd', category: 'Raw Materials' },
-  { id: 2, name: 'NetScale Solutions', category: 'IT Solutions' },
-  { id: 3, name: 'Habitat Crafts', category: 'Office Goods' },
-  { id: 4, name: 'Titan Heavy Machinery', category: 'Heavy Equipment' },
-  { id: 5, name: 'Global Logistics Inc', category: 'Logistics' },
-  { id: 6, name: 'Stark Industries', category: 'Raw Materials' }
-];
+import { fetchRFQs, createRFQ } from '../services/rfqService';
+import { fetchVendors } from '../services/vendorService';
+import api from '../services/api';
 
 const RFQs = () => {
-  const [rfqs, setRfqs] = useState(initialRFQs);
+  const [rfqs, setRfqs] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -49,6 +36,21 @@ const RFQs = () => {
 
   // Search Filter state
   const [listFilter, setListFilter] = useState('');
+
+  const loadData = async () => {
+    try {
+      const rfqList = await fetchRFQs();
+      setRfqs(rfqList);
+      const vendorList = await fetchVendors();
+      setVendors(vendorList);
+    } catch (err) {
+      console.error('Failed to load RFQ/Vendor data', err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Step 2 products list handlers
   const handleAddProductRow = () => {
@@ -129,8 +131,7 @@ const RFQs = () => {
     setIsCreating(false);
   };
 
-  const submitRfq = (status) => {
-    // Aligns state back to payload for API readiness
+  const submitRfq = async (status) => {
     const payload = {
       title,
       category,
@@ -140,26 +141,22 @@ const RFQs = () => {
       items: items.map(({ itemName, quantity, unit }) => ({ itemName, quantity, unit }))
     };
 
-    console.log('Sending API Payload to Axios Client:', payload);
-
-    const newRfq = {
-      id: rfqs.length + 1,
-      title: payload.title || 'Untitled Procurement',
-      category: payload.category || 'General',
-      description: payload.description,
-      deadline: payload.deadline || '2026-06-30',
-      submissions: 0,
-      status: status
-    };
-
-    setRfqs([newRfq, ...rfqs]);
-    resetForm();
+    try {
+      const newRfq = await createRFQ(payload);
+      if (status === 'Active') {
+        await api.post(`/rfqs/${newRfq.id}/publish`);
+      }
+      await loadData();
+      resetForm();
+    } catch (err) {
+      console.error('Failed to submit RFQ', err);
+    }
   };
 
   // Filter list of RFQs
   const filteredRfqs = rfqs.filter(r => 
-    r.title.toLowerCase().includes(listFilter.toLowerCase()) ||
-    r.category.toLowerCase().includes(listFilter.toLowerCase())
+    (r.title || '').toLowerCase().includes(listFilter.toLowerCase()) ||
+    (r.category || '').toLowerCase().includes(listFilter.toLowerCase())
   );
 
   return (
@@ -464,7 +461,7 @@ const RFQs = () => {
                     <span className="text-muted extra-small">Select partners matching this category to dispatch notifications</span>
                     
                     <div className="vendor-select-list rounded-3 p-2 d-flex flex-column gap-1.5 mt-2">
-                      {mockVendors
+                      {vendors
                         .filter(v => v.category === category)
                         .map(vendor => (
                           <div 
@@ -484,7 +481,7 @@ const RFQs = () => {
                             <span className="badge-status badge-info extra-small">{vendor.category}</span>
                           </div>
                         ))}
-                      {mockVendors.filter(v => v.category === category).length === 0 && (
+                      {vendors.filter(v => v.category === category).length === 0 && (
                         <div className="text-center p-4 text-secondary small">
                           No vendors matching {category} category.
                         </div>

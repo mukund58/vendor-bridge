@@ -1,5 +1,4 @@
 import api from './api';
-import { mockDashboardData } from '../data/mockDashboardData';
 
 const USE_MOCK = false;
 

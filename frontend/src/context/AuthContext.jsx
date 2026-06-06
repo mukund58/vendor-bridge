@@ -1,112 +1,95 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContextObject';
-
-// Default predefined users aligned with API specifications
-const defaultUsers = [
-  { id: 1, name: 'Admin User', email: 'admin@vendorbridge.com', role: 'ADMIN', password: 'password123' },
-  { id: 2, name: 'Apex Metal Solutions', email: 'vendor@vendorbridge.com', role: 'VENDOR', password: 'password123' },
-  { id: 3, name: 'Manager Marcus', email: 'manager@vendorbridge.com', role: 'MANAGER', password: 'password123' },
-  { id: 4, name: 'Officer Jenkins', email: 'officer@vendorbridge.com', role: 'PROCUREMENT_OFFICER', password: 'password123' }
-];
+import { loginUser, registerUser, fetchCurrentUser } from '../services/authService';
 
 export const AuthProvider = ({ children }) => {
-  // Use lazy state initializers to pull directly from LocalStorage, avoiding set-state-in-effect warning
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('vb_user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('vb_token'));
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Check profile state validation logging (GET /auth/me checks)
+  // Validate session on mount if token exists
   useEffect(() => {
-    if (token && user) {
-      console.log('Axios GET /auth/me checking session validation.');
-    }
-  }, [token, user]);
+    const validateSession = async () => {
+      if (token && !user) {
+        try {
+          const currentUser = await fetchCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+            localStorage.setItem('vb_user', JSON.stringify(currentUser));
+          } else {
+            // Token invalid, clear session
+            logout();
+          }
+        } catch {
+          logout();
+        }
+      }
+    };
+    validateSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Login handler simulating POST /auth/login
+  // Login handler calling POST /auth/login
   const login = async (email, password) => {
-    console.log('Axios POST /auth/login requested with payload:', { email, password });
-    
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    setLoading(true);
+    try {
+      const response = await loginUser(email, password);
 
-    // Check predefined users first
-    let foundUser = defaultUsers.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
+      if (response && response.token) {
+        const userPayload = {
+          id: response.user.id,
+          name: response.user.name,
+          role: response.user.role,
+          email: email
+        };
 
-    // Check custom registered users from localStorage
-    if (!foundUser) {
-      const customUsers = JSON.parse(localStorage.getItem('vb_registered_users') || '[]');
-      foundUser = customUsers.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
+        setToken(response.token);
+        setUser(userPayload);
+        localStorage.setItem('vb_token', response.token);
+        localStorage.setItem('vb_user', JSON.stringify(userPayload));
+
+        return { success: true, user: userPayload };
+      }
+
+      return { success: false, error: 'Invalid email or password.' };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Invalid email or password.';
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
-
-    if (foundUser) {
-      const generatedToken = `jwt_token_${foundUser.role.toLowerCase()}_${Date.now()}`;
-      const userPayload = {
-        id: foundUser.id,
-        name: foundUser.name,
-        role: foundUser.role,
-        email: foundUser.email
-      };
-
-      // Set state and write to localStorage
-      setToken(generatedToken);
-      setUser(userPayload);
-      localStorage.setItem('vb_token', generatedToken);
-      localStorage.setItem('vb_user', JSON.stringify(userPayload));
-
-      console.log('Axios POST /auth/login success response:', { token: generatedToken, user: userPayload });
-      return { success: true, user: userPayload };
-    }
-
-    return { success: false, error: 'Invalid email or password.' };
   };
 
-  // Register handler simulating POST /auth/register
+  // Register handler calling POST /auth/register
   const register = async (formData) => {
-    const registerPayload = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      country: formData.country,
-      role: formData.role,
-      password: formData.password
-    };
+    setLoading(true);
+    try {
+      const registerPayload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone || '',
+        country: formData.country || '',
+        role: formData.role || 'VENDOR',
+        password: formData.password
+      };
 
-    console.log('Axios POST /auth/register requested with payload:', registerPayload);
+      const response = await registerUser(registerPayload);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+      if (response && response.token) {
+        return { success: true };
+      }
 
-    const customUsers = JSON.parse(localStorage.getItem('vb_registered_users') || '[]');
-    
-    const emailExists = 
-      defaultUsers.some((u) => u.email.toLowerCase() === formData.email.toLowerCase()) ||
-      customUsers.some((u) => u.email.toLowerCase() === formData.email.toLowerCase());
-
-    if (emailExists) {
-      return { success: false, error: 'Email address is already registered.' };
+      return { success: true };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Registration failed.';
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
-
-    const newUser = {
-      id: customUsers.length + 5,
-      name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
-      role: formData.role,
-      password: formData.password
-    };
-
-    customUsers.push(newUser);
-    localStorage.setItem('vb_registered_users', JSON.stringify(customUsers));
-
-    console.log('Axios POST /auth/register success status.');
-    return { success: true };
   };
 
   const logout = () => {
@@ -114,7 +97,6 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('vb_token');
     localStorage.removeItem('vb_user');
-    console.log('Session cleared. Redirected to Sign In.');
   };
 
   return (

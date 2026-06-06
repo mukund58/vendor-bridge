@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiPlus, 
   FiFileText, 
@@ -11,25 +11,37 @@ import {
   FiBriefcase 
 } from 'react-icons/fi';
 import './Invoices.css';
-
-const initialInvoices = [
-  { id: 1, invoice_number: 'INV-2026-7790', purchase_order_id: 2, vendor_name: 'Titan Heavy Machinery', subtotal: 97457.63, tax_amount: 17542.37, total_amount: 115000, status: 'PAID', created_at: '2026-06-01T10:00:00Z' },
-  { id: 2, invoice_number: 'INV-2026-7791', purchase_order_id: 1, vendor_name: 'Stark Industries', subtotal: 33474.58, tax_amount: 6025.42, total_amount: 39500, status: 'UNPAID', created_at: '2026-06-05T15:30:00Z' },
-];
-
-const mockPOs = [
-  { id: 1, po_number: 'PO-2026-1029', vendor_name: 'Stark Industries', amount: 39500 },
-  { id: 2, po_number: 'PO-2026-1028', vendor_name: 'Titan Heavy Machinery', amount: 115000 },
-  { id: 3, po_number: 'PO-2026-1027', vendor_name: 'NetScale Solutions', amount: 18900 }
-];
+import { fetchInvoices, createInvoice, markInvoiceAsPaid, fetchInvoicePdfUrl, sendInvoiceEmail } from '../services/invoiceService';
+import { fetchPurchaseOrders } from '../services/purchaseOrderService';
 
 const Invoices = () => {
-  const [invoices, setInvoices] = useState(initialInvoices);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState(2);
+  const [invoices, setInvoices] = useState([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [selectedPoId, setSelectedPoId] = useState('');
+  const [pos, setPos] = useState([]);
 
-  const activeInvoice = invoices.find(inv => inv.id === selectedInvoiceId) || invoices[0];
+  const loadData = async () => {
+    try {
+      const invoiceList = await fetchInvoices();
+      setInvoices(invoiceList);
+      if (invoiceList.length > 0) {
+        setSelectedInvoiceId(invoiceList[0].id);
+      } else {
+        setSelectedInvoiceId(null);
+      }
+      const poList = await fetchPurchaseOrders();
+      setPos(poList);
+    } catch (err) {
+      console.error("Failed to load invoice/PO data", err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const activeInvoice = invoices.find(inv => inv.id === selectedInvoiceId) || invoices[0] || null;
 
   // Helper status color mapping
   const getStatusMeta = (status) => {
@@ -44,63 +56,53 @@ const Invoices = () => {
   };
 
   // Generate Invoice (POST /invoices)
-  const handleGenerateInvoiceSubmit = (e) => {
+  const handleGenerateInvoiceSubmit = async (e) => {
     e.preventDefault();
     if (!selectedPoId) return;
 
-    const chosenPo = mockPOs.find(p => p.id === parseInt(selectedPoId));
-    if (!chosenPo) return;
-
-    // Calculate tax (18% GST calculation)
-    const total = chosenPo.amount;
-    const sub = total / 1.18;
-    const tax = total - sub;
-
-    const payload = {
-      purchaseOrderId: chosenPo.id
-    };
-
-    console.log('Axios POST /invoices payload:', payload);
-
-    const newInvoice = {
-      id: invoices.length + 1,
-      invoice_number: `INV-2026-77${90 + invoices.length}`,
-      purchase_order_id: chosenPo.id,
-      vendor_name: chosenPo.vendor_name,
-      subtotal: parseFloat(sub.toFixed(2)),
-      tax_amount: parseFloat(tax.toFixed(2)),
-      total_amount: total,
-      status: 'UNPAID',
-      created_at: new Date().toISOString()
-    };
-
-    setInvoices([newInvoice, ...invoices]);
-    setSelectedInvoiceId(newInvoice.id);
-    setIsGenerateOpen(false);
-    setSelectedPoId('');
+    try {
+      await createInvoice(parseInt(selectedPoId));
+      setIsGenerateOpen(false);
+      setSelectedPoId('');
+      await loadData();
+    } catch (err) {
+      console.error("Failed to generate invoice", err);
+    }
   };
 
   // Mark Paid (PATCH /invoices/{id}/mark-paid)
-  const handleMarkPaid = (id) => {
-    console.log(`Axios PATCH /invoices/${id}/mark-paid payload: {}`);
-    setInvoices(invoices.map(inv => {
-      if (inv.id === id) {
-        return { ...inv, status: 'PAID' };
-      }
-      return inv;
-    }));
+  const handleMarkPaid = async (id) => {
+    try {
+      await markInvoiceAsPaid(id);
+      await loadData();
+    } catch (err) {
+      console.error("Failed to mark invoice as paid", err);
+    }
   };
 
   // Download PDF (GET /invoices/{id}/pdf)
-  const handleDownloadPDF = (id, invoiceNumber) => {
-    console.log(`Axios GET /invoices/${id}/pdf trigger`);
-    alert(`Downloading PDF document for invoice reference: ${invoiceNumber}`);
+  const handleDownloadPDF = async (id, invoiceNumber) => {
+    try {
+      const pdfEndpoint = await fetchInvoicePdfUrl(id);
+      // Wait, endpoint is root-relative or absolute. The service returns '/invoices/{id}/pdf' or similar.
+      // Since fetchInvoicePdfUrl returns the path, let's prepend backend host if needed or use relative.
+      // The frontend config uses relative path mapped through proxy or baseURL.
+      // Let's use the baseURL from api service or open URL dynamically.
+      const baseUrl = '/api/v1'; // fallback
+      window.open(`http://localhost:5000${baseUrl}${pdfEndpoint}`, '_blank');
+    } catch (err) {
+      console.error("Failed to open invoice PDF", err);
+    }
   };
 
   // Email Invoice (POST /invoices/{id}/email)
-  const handleEmailInvoice = (id, invoiceNumber) => {
-    console.log(`Axios POST /invoices/${id}/email trigger`);
-    alert(`Invoice document dispatch queued. Sent email to supplier for invoice: ${invoiceNumber}`);
+  const handleEmailInvoice = async (id, invoiceNumber) => {
+    try {
+      await sendInvoiceEmail(id);
+      alert(`Invoice document dispatch queued. Sent email to supplier for invoice: ${invoiceNumber}`);
+    } catch (err) {
+      console.error("Failed to dispatch email", err);
+    }
   };
 
   // Print Invoice simulation
@@ -185,103 +187,109 @@ const Invoices = () => {
 
         {/* Right Col: Invoice Details Card (Physical Sheet design style) */}
         <div className="col-12 col-xl-5">
-          <div className="invoice-slip p-4 d-flex flex-column gap-3.5 position-relative">
-            {/* Watermark badge status */}
-            <div className="status-watermark text-success">
-              {activeInvoice.status}
-            </div>
+          {activeInvoice ? (
+            <div className="invoice-slip p-4 d-flex flex-column gap-3.5 position-relative">
+              {/* Watermark badge status */}
+              <div className="status-watermark text-success">
+                {activeInvoice.status}
+              </div>
 
-            {/* Invoice Header */}
-            <div className="invoice-header d-flex justify-content-between align-items-start">
-              <div>
-                <div className="d-flex align-items-center gap-2">
-                  <FiBriefcase className="text-primary" />
-                  <span className="text-white fw-bold tracking-tight">VendorBridge ERP</span>
+              {/* Invoice Header */}
+              <div className="invoice-header d-flex justify-content-between align-items-start">
+                <div>
+                  <div className="d-flex align-items-center gap-2">
+                    <FiBriefcase className="text-primary" />
+                    <span className="text-white fw-bold tracking-tight">VendorBridge ERP</span>
+                  </div>
+                  <span className="text-muted extra-small d-block mt-1">Billing Reference Document</span>
                 </div>
-                <span className="text-muted extra-small d-block mt-1">Billing Reference Document</span>
-              </div>
-              <div className="text-end">
-                <h6 className="text-white fw-bold m-0 fs-6">{activeInvoice.invoice_number}</h6>
-                <span className="text-muted extra-small">Date: {new Date(activeInvoice.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {/* Bill To & Associated PO details */}
-            <div className="invoice-bill-info row g-3 pb-3 border-bottom border-light">
-              <div className="col-6">
-                <span className="text-muted extra-small uppercase fw-semibold">Supplier Partner</span>
-                <div className="text-white small fw-bold mt-1">{activeInvoice.vendor_name}</div>
-              </div>
-              <div className="col-6 text-end">
-                <span className="text-muted extra-small uppercase fw-semibold">Associated PO</span>
-                <div className="text-white small fw-bold mt-1">PO-2026-10{27 + activeInvoice.purchase_order_id}</div>
-              </div>
-            </div>
-
-            {/* Mock Item lines table */}
-            <div className="invoice-items-summary">
-              <span className="text-muted extra-small uppercase fw-semibold mb-2 d-inline-block">Summary Details</span>
-              <div className="p-3 rounded bg-secondary border border-light d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center gap-2">
-                  <FiFileText className="text-primary" />
-                  <span className="text-white small fw-semibold">Procurement Fulfillment Items</span>
+                <div className="text-end">
+                  <h6 className="text-white fw-bold m-0 fs-6">{activeInvoice.invoice_number}</h6>
+                  <span className="text-muted extra-small">Date: {new Date(activeInvoice.created_at).toLocaleDateString()}</span>
                 </div>
-                <span className="text-white small fw-bold">${activeInvoice.subtotal.toLocaleString()}</span>
               </div>
-            </div>
 
-            {/* GST Tax Calculations Section */}
-            <div className="invoice-totals">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">Base Subtotal:</span>
-                <span className="text-white small">${activeInvoice.subtotal.toLocaleString()}</span>
+              {/* Bill To & Associated PO details */}
+              <div className="invoice-bill-info row g-3 pb-3 border-bottom border-light">
+                <div className="col-6">
+                  <span className="text-muted extra-small uppercase fw-semibold">Supplier Partner</span>
+                  <div className="text-white small fw-bold mt-1">{activeInvoice.vendor_name}</div>
+                </div>
+                <div className="col-6 text-end">
+                  <span className="text-muted extra-small uppercase fw-semibold">Associated PO</span>
+                  <div className="text-white small fw-bold mt-1">PO-2026-10{27 + activeInvoice.purchase_order_id}</div>
+                </div>
               </div>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">GST Tax (18%):</span>
-                <span className="text-white small">${activeInvoice.tax_amount.toLocaleString()}</span>
-              </div>
-              
-              {/* Grand Total Calculation Display */}
-              <div className="d-flex justify-content-between align-items-center mt-2.5 pt-2.5 border-top border-light">
-                <span className="text-white fw-bold small">Grand Total:</span>
-                <span className="text-success fw-bold fs-5">${activeInvoice.total_amount.toLocaleString()}</span>
-              </div>
-            </div>
 
-            {/* Action buttons list */}
-            <div className="invoice-actions-panel mt-4 pt-3 border-top border-light">
-              {activeInvoice.status === 'UNPAID' && (
+              {/* Mock Item lines table */}
+              <div className="invoice-items-summary">
+                <span className="text-muted extra-small uppercase fw-semibold mb-2 d-inline-block">Summary Details</span>
+                <div className="p-3 rounded bg-secondary border border-light d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center gap-2">
+                    <FiFileText className="text-primary" />
+                    <span className="text-white small fw-semibold">Procurement Fulfillment Items</span>
+                  </div>
+                  <span className="text-white small fw-bold">${activeInvoice.subtotal.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* GST Tax Calculations Section */}
+              <div className="invoice-totals">
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Base Subtotal:</span>
+                  <span className="text-white small">${activeInvoice.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">GST Tax (18%):</span>
+                  <span className="text-white small">${activeInvoice.tax_amount.toLocaleString()}</span>
+                </div>
+                
+                {/* Grand Total Calculation Display */}
+                <div className="d-flex justify-content-between align-items-center mt-2.5 pt-2.5 border-top border-light">
+                  <span className="text-white fw-bold small">Grand Total:</span>
+                  <span className="text-success fw-bold fs-5">${activeInvoice.total_amount.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Action buttons list */}
+              <div className="invoice-actions-panel mt-4 pt-3 border-top border-light">
+                {activeInvoice.status === 'UNPAID' && (
+                  <button 
+                    type="button" 
+                    className="btn btn-success btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1.5"
+                    onClick={() => handleMarkPaid(activeInvoice.id)}
+                  >
+                    <FiCheckCircle /> Mark Paid
+                  </button>
+                )}
                 <button 
                   type="button" 
-                  className="btn btn-success btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1.5"
-                  onClick={() => handleMarkPaid(activeInvoice.id)}
+                  className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                  onClick={() => handleDownloadPDF(activeInvoice.id, activeInvoice.invoice_number)}
                 >
-                  <FiCheckCircle /> Mark Paid
+                  <FiDownload size={14} /> PDF
                 </button>
-              )}
-              <button 
-                type="button" 
-                className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
-                onClick={() => handleDownloadPDF(activeInvoice.id, activeInvoice.invoice_number)}
-              >
-                <FiDownload size={14} /> PDF
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
-                onClick={() => handleEmailInvoice(activeInvoice.id, activeInvoice.invoice_number)}
-              >
-                <FiMail size={14} /> Send Email
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
-                onClick={handlePrintInvoice}
-              >
-                <FiPrinter size={14} /> Print
-              </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                  onClick={() => handleEmailInvoice(activeInvoice.id, activeInvoice.invoice_number)}
+                >
+                  <FiMail size={14} /> Send Email
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                  onClick={handlePrintInvoice}
+                >
+                  <FiPrinter size={14} /> Print
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="card p-4 text-center text-secondary">
+              Select an invoice to view summary ledger.
+            </div>
+          )}
         </div>
       </div>
 
@@ -318,9 +326,9 @@ const Invoices = () => {
                     onChange={(e) => setSelectedPoId(e.target.value)}
                   >
                     <option value="" style={{ backgroundColor: 'var(--bg-secondary)' }}>Select Purchase Order...</option>
-                    {mockPOs.map(po => (
+                    {pos.map(po => (
                       <option key={po.id} value={po.id} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                        {po.po_number} - {po.vendor_name} (${po.amount.toLocaleString()})
+                        {po.po_number} - {po.vendor_name} (${(po.amount || 0).toLocaleString()})
                       </option>
                     ))}
                   </select>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiStar, 
   FiAward, 
@@ -7,53 +7,66 @@ import {
   FiSliders
 } from 'react-icons/fi';
 import './Quotations.css';
-
-// Mock comparisons datasets conforming exactly to GET /rfqs/{id}/comparison
-const mockComparisons = {
-  1: {
-    rfqId: 1,
-    rfqTitle: 'Raw Steel Sheet Coils',
-    category: 'Raw Materials',
-    quotations: [
-      { quotationId: 101, vendor: 'Apex Metals Ltd', amount: 42500, deliveryDays: 5, rating: 4.8 },
-      { quotationId: 102, vendor: 'Titan Heavy Machinery', amount: 45000, deliveryDays: 3, rating: 4.2 },
-      { quotationId: 103, vendor: 'Stark Industries', amount: 39500, deliveryDays: 8, rating: 4.9 }
-    ]
-  },
-  2: {
-    rfqId: 2,
-    rfqTitle: 'Cloud Server Hardware Racks',
-    category: 'IT Solutions',
-    quotations: [
-      { quotationId: 201, vendor: 'NetScale Solutions', amount: 18900, deliveryDays: 14, rating: 4.5 },
-      { quotationId: 202, vendor: 'Barry Labs', amount: 19500, deliveryDays: 7, rating: 4.1 }
-    ]
-  }
-};
+import { fetchRFQs } from '../services/rfqService';
+import { fetchQuotations, selectWinningQuotation } from '../services/quotationService';
 
 const Quotations = () => {
-  const [selectedRfqId, setSelectedRfqId] = useState(1);
+  const [rfqs, setRfqs] = useState([]);
+  const [selectedRfqId, setSelectedRfqId] = useState('');
   const [sortOption, setSortOption] = useState('price-asc');
   const [selectedWinnerId, setSelectedWinnerId] = useState(null); // stores quotationId
   const [winningRemarks, setWinningRemarks] = useState('');
+  const [activeComparison, setActiveComparison] = useState(null);
+  const [loading, setLoading] = useState(false);
   
   // Selection Modal states
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [candidateQuote, setCandidateQuote] = useState(null);
 
-  const activeComparison = mockComparisons[selectedRfqId];
-  const { quotations, rfqTitle, category } = activeComparison;
+  const loadRFQs = async () => {
+    try {
+      const list = await fetchRFQs();
+      setRfqs(list);
+      if (list.length > 0) {
+        setSelectedRfqId(list[0].id);
+      }
+    } catch (err) {
+      console.error("Failed to load RFQs", err);
+    }
+  };
+
+  useEffect(() => {
+    loadRFQs();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedRfqId) return;
+    const loadComparison = async () => {
+      setLoading(true);
+      try {
+        const comp = await fetchQuotations(selectedRfqId);
+        setActiveComparison(comp);
+      } catch (err) {
+        console.error("Failed to load comparison", err);
+        setActiveComparison(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadComparison();
+  }, [selectedRfqId]);
+
+  const quotations = activeComparison?.quotations || [];
+  const rfqTitle = activeComparison?.rfqTitle || rfqs.find(r => r.id === selectedRfqId)?.title || 'No RFQ Selected';
+  const category = activeComparison?.category || rfqs.find(r => r.id === selectedRfqId)?.category || '';
 
   // Find lowest price and fastest delivery dynamics
-  const lowestPrice = Math.min(...quotations.map(q => q.amount));
-  const fastestDelivery = Math.min(...quotations.map(q => q.deliveryDays));
+  const lowestPrice = quotations.length > 0 ? Math.min(...quotations.map(q => q.amount)) : 0;
+  const fastestDelivery = quotations.length > 0 ? Math.min(...quotations.map(q => q.deliveryDays)) : 0;
 
   // Recommendation logic: highest rating + lowest cost, or highest score
-  // For raw steel sheets, Stark Industries is lowest and highest rating, so recommended
-  // For cloud servers, NetScale is recommended
   const isRecommended = (quote) => {
-    if (selectedRfqId === 1 && quote.quotationId === 103) return true;
-    if (selectedRfqId === 2 && quote.quotationId === 201) return true;
+    if (activeComparison && activeComparison.winnerSuggestion === quote.vendor) return true;
     return false;
   };
 
@@ -72,20 +85,17 @@ const Quotations = () => {
     setIsConfirmOpen(true);
   };
 
-  const handleConfirmSelection = (e) => {
+  const handleConfirmSelection = async (e) => {
     e.preventDefault();
 
-    // Axios client payload print simulation (POST /rfqs/{id}/select-quotation)
-    const payload = {
-      quotationId: candidateQuote.quotationId,
-      remarks: winningRemarks
-    };
-    
-    console.log(`Axios POST /api/v1/rfqs/${selectedRfqId}/select-quotation payload:`, payload);
-    
-    setSelectedWinnerId(candidateQuote.quotationId);
-    setIsConfirmOpen(false);
-    setWinningRemarks('');
+    try {
+      await selectWinningQuotation(selectedRfqId, candidateQuote.quotationId, winningRemarks);
+      setSelectedWinnerId(candidateQuote.quotationId);
+      setIsConfirmOpen(false);
+      setWinningRemarks('');
+    } catch (err) {
+      console.error("Failed to select winning quotation", err);
+    }
   };
 
   const handleResetSelection = () => {
@@ -128,8 +138,12 @@ const Quotations = () => {
               setSelectedWinnerId(null); // Reset winner selection on RFQ toggle
             }}
           >
-            <option value={1} style={{ backgroundColor: 'var(--bg-secondary)' }}>RFQ-0041: Steel Sheet Coils</option>
-            <option value={2} style={{ backgroundColor: 'var(--bg-secondary)' }}>RFQ-0040: Cloud Server Racks</option>
+            <option value="" disabled style={{ backgroundColor: 'var(--bg-secondary)' }}>Select RFQ...</option>
+            {rfqs.map(r => (
+              <option key={r.id} value={r.id} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                RFQ-{String(r.id).padStart(4, '0')}: {r.title}
+              </option>
+            ))}
           </select>
         </div>
       </div>

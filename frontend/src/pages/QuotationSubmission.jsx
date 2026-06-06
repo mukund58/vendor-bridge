@@ -12,16 +12,9 @@ import { fetchRFQs } from '../services/rfqService';
 import { submitQuotation } from '../services/quotationService';
 import './QuotationSubmission.css';
 
-// Hardcoded items per RFQ in mock database
-const rfqItemsMap = {
-  1: [{ name: 'Grade A Steel Sheet Coils (4mm)', quantity: 20, unit: 'TONS' }],
-  2: [{ name: 'Server Hardware Cabinets (42U)', quantity: 5, unit: 'NOS' }],
-  3: [{ name: 'Industrial Loader Forklifts', quantity: 2, unit: 'NOS' }]
-};
-
 const QuotationSubmission = () => {
   const [rfqs, setRfqs] = useState([]);
-  const [selectedRfqId, setSelectedRfqId] = useState(1);
+  const [selectedRfqId, setSelectedRfqId] = useState('');
   const [loading, setLoading] = useState(true);
   
   // Bid Form state
@@ -41,14 +34,17 @@ const QuotationSubmission = () => {
     const loadRFQs = async () => {
       try {
         const list = await fetchRFQs();
-        const activeRfqs = list.filter(r => r.status === 'Active');
+        const activeRfqs = list.filter(r => r.status === 'Active' || r.status === 'Published');
         setRfqs(activeRfqs);
         if (activeRfqs.length > 0) {
           const initialId = activeRfqs[0].id;
           setSelectedRfqId(initialId);
-          const items = rfqItemsMap[initialId] || [];
+          const items = activeRfqs[0].items || [];
           setBidItems(items.map(item => ({
-            ...item,
+            itemId: item.id,
+            name: item.itemName,
+            quantity: item.quantity,
+            unit: item.unit,
             unitPrice: ''
           })));
         }
@@ -89,15 +85,13 @@ const QuotationSubmission = () => {
     setIsSubmitting(true);
 
     const payload = {
-      vendor: 'Apex Metal Solutions',
-      amount: totalAmount,
-      deliveryDays: parseInt(deliveryDays),
-      rating: 4.8, // Mock default rating for this custom vendor
-      remarks: bidRemarks,
+      rfqId: selectedRfqId,
+      gstPercentage: parseFloat(gstRate),
+      notes: bidRemarks,
       items: bidItems.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice
+        itemId: item.itemId,
+        unitPrice: parseFloat(item.unitPrice),
+        deliveryDays: parseInt(deliveryDays)
       }))
     };
 
@@ -162,9 +156,13 @@ const QuotationSubmission = () => {
                   onChange={(e) => {
                     const rfqId = parseInt(e.target.value);
                     setSelectedRfqId(rfqId);
-                    const items = rfqItemsMap[rfqId] || [];
+                    const selected = rfqs.find(r => r.id === rfqId);
+                    const items = selected?.items || [];
                     setBidItems(items.map(item => ({
-                      ...item,
+                      itemId: item.id,
+                      name: item.itemName,
+                      quantity: item.quantity,
+                      unit: item.unit,
                       unitPrice: ''
                     })));
                   }}

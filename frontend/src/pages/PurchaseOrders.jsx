@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FiPlus, 
@@ -10,22 +10,14 @@ import {
   FiAlertCircle 
 } from 'react-icons/fi';
 import './PurchaseOrders.css';
-
-const initialPOs = [
-  { id: 1, po_number: 'PO-2026-1029', quotation_id: 103, vendor_name: 'Stark Industries', status: 'IN_TRANSIT', created_at: '2026-06-05T10:00:00Z', amount: 39500 },
-  { id: 2, po_number: 'PO-2026-1028', quotation_id: 102, vendor_name: 'Titan Heavy Machinery', status: 'DELIVERED', created_at: '2026-05-30T14:15:00Z', amount: 115000 },
-  { id: 3, po_number: 'PO-2026-1027', quotation_id: 201, vendor_name: 'NetScale Solutions', status: 'ACKNOWLEDGED', created_at: '2026-05-28T09:30:00Z', amount: 18900 }
-];
-
-const mockQuotations = [
-  { quotationId: 101, vendor: 'Apex Metals Ltd', amount: 42500, rfq: 'RFQ-0041' },
-  { quotationId: 102, vendor: 'Titan Heavy Machinery', amount: 45000, rfq: 'RFQ-0041' },
-  { quotationId: 202, vendor: 'Barry Labs', amount: 19500, rfq: 'RFQ-0040' }
-];
+import { fetchPurchaseOrders, generatePurchaseOrder } from '../services/purchaseOrderService';
+import { fetchAllQuotations } from '../services/quotationService';
+import { createInvoice } from '../services/invoiceService';
 
 const PurchaseOrders = () => {
-  const [pos, setPos] = useState(initialPOs);
-  const [selectedPoId, setSelectedPoId] = useState(1);
+  const [pos, setPos] = useState([]);
+  const [selectedPoId, setSelectedPoId] = useState(null);
+  const [quotations, setQuotations] = useState([]);
   const navigate = useNavigate();
 
   // Modal states
@@ -33,7 +25,27 @@ const PurchaseOrders = () => {
   const [selectedQuoteId, setSelectedQuoteId] = useState('');
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const activePo = pos.find(p => p.id === selectedPoId) || pos[0];
+  const loadData = async () => {
+    try {
+      const poList = await fetchPurchaseOrders();
+      setPos(poList);
+      if (poList.length > 0) {
+        setSelectedPoId(poList[0].id);
+      } else {
+        setSelectedPoId(null);
+      }
+      const quoteList = await fetchAllQuotations();
+      setQuotations(quoteList);
+    } catch (err) {
+      console.error("Failed to load PO/Quotations data", err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const activePo = pos.find(p => p.id === selectedPoId) || pos[0] || null;
 
   // Helper status color mapping
   const getStatusMeta = (status) => {
@@ -50,43 +62,29 @@ const PurchaseOrders = () => {
   };
 
   // Generate PO simulation (POST /purchase-orders)
-  const handleGeneratePO = (e) => {
+  const handleGeneratePO = async (e) => {
     e.preventDefault();
     if (!selectedQuoteId) return;
 
-    const chosenQuote = mockQuotations.find(q => q.quotationId === parseInt(selectedQuoteId));
-    const payload = {
-      quotationId: parseInt(selectedQuoteId)
-    };
-
-    console.log('Axios POST /purchase-orders payload:', payload);
-
-    const newPO = {
-      id: pos.length + 1,
-      po_number: `PO-2026-10${30 + pos.length}`,
-      quotation_id: payload.quotationId,
-      vendor_name: chosenQuote ? chosenQuote.vendor : 'Unknown Supplier',
-      status: 'ACKNOWLEDGED',
-      created_at: new Date().toISOString(),
-      amount: chosenQuote ? chosenQuote.amount : 0
-    };
-
-    setPos([newPO, ...pos]);
-    setIsGenerateOpen(false);
-    setSelectedQuoteId('');
+    try {
+      await generatePurchaseOrder(parseInt(selectedQuoteId));
+      setIsGenerateOpen(false);
+      setSelectedQuoteId('');
+      await loadData();
+    } catch (err) {
+      console.error("Failed to generate Purchase Order", err);
+    }
   };
 
   // Generate Invoice simulation (POST /invoices)
-  const handleGenerateInvoice = (po) => {
-    const payload = {
-      purchaseOrderId: po.id
-    };
-    
-    console.log('Axios POST /invoices payload:', payload);
-    
-    // Simulate navigation to invoice page passing generated invoice data or simply redirecting
-    alert(`Invoice simulation request generated for ${po.po_number}. Redirecting to Invoices...`);
-    navigate('/invoices');
+  const handleGenerateInvoice = async (po) => {
+    try {
+      await createInvoice(po.id);
+      alert(`Invoice generated for PO ${po.po_number}. Redirecting to Invoices...`);
+      navigate('/invoices');
+    } catch (err) {
+      console.error("Failed to generate invoice", err);
+    }
   };
 
   return (
@@ -176,36 +174,42 @@ const PurchaseOrders = () => {
 
         {/* Right Col: Quick PO specs preview */}
         <div className="col-12 col-xl-4">
-          <div className="card p-4">
-            <div className="border-bottom border-light pb-2.5 mb-3">
-              <span className="text-primary extra-small fw-semibold uppercase tracking-wider">Purchase Summary</span>
-              <h5 className="text-white fw-bold mb-0 mt-0.5">{activePo.po_number}</h5>
-            </div>
+          {activePo ? (
+            <div className="card p-4">
+              <div className="border-bottom border-light pb-2.5 mb-3">
+                <span className="text-primary extra-small fw-semibold uppercase tracking-wider">Purchase Summary</span>
+                <h5 className="text-white fw-bold mb-0 mt-0.5">{activePo.po_number}</h5>
+              </div>
 
-            <div className="d-flex flex-column gap-3.5">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">Vendor Partner:</span>
-                <span className="text-white fw-medium small">{activePo.vendor_name}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">Linked Quotation:</span>
-                <span className="text-white small">QTN-{activePo.quotation_id}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">Created Date:</span>
-                <span className="text-white small">{new Date(activePo.created_at).toLocaleString()}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-secondary small">Billed Cost:</span>
-                <span className="text-success fw-bold">${activePo.amount.toLocaleString()}</span>
+              <div className="d-flex flex-column gap-3.5">
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Vendor Partner:</span>
+                  <span className="text-white fw-medium small">{activePo.vendor_name}</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Linked Quotation:</span>
+                  <span className="text-white small">QTN-{activePo.quotation_id}</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Created Date:</span>
+                  <span className="text-white small">{new Date(activePo.created_at).toLocaleString()}</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Billed Cost:</span>
+                  <span className="text-success fw-bold">${activePo.amount.toLocaleString()}</span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="card p-4 text-center text-secondary">
+              Select a Purchase Order to view summary.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Details Dialog Modal */}
-      {isDetailsOpen && (
+      {isDetailsOpen && activePo && (
         <div className="custom-modal-overlay">
           <div className="custom-modal-content card p-4 glass border border-light" style={{ width: '450px' }}>
             <div className="d-flex justify-content-between align-items-center mb-3.5 pb-2.5 border-bottom border-light">
@@ -290,9 +294,9 @@ const PurchaseOrders = () => {
                     onChange={(e) => setSelectedQuoteId(e.target.value)}
                   >
                     <option value="" style={{ backgroundColor: 'var(--bg-secondary)' }}>Select approved quote...</option>
-                    {mockQuotations.map(q => (
-                      <option key={q.quotationId} value={q.quotationId} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                        QTN-{q.quotationId} - {q.vendor} (${q.amount.toLocaleString()})
+                    {quotations.map(q => (
+                      <option key={q.id} value={q.id} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                        QTN-{q.id} - {q.vendorName} (${(q.totalPrice || 0).toLocaleString()})
                       </option>
                     ))}
                   </select>
