@@ -14,16 +14,7 @@ import {
 import './ActivityLogs.css';
 import api from '../services/api';
 
-// Mock logs conforming exactly to GET /activities API structure
-const mockActivities = [
-  { id: 1, action: 'RFQ Published for Raw Steel Sheet Coils', timestamp: '2026-06-06T09:52:00Z', type: 'RFQ', status: 'SUCCESS', user: 'Sarah Jenkins' },
-  { id: 2, action: 'Approval Pending for Cloud Infrastructure PO', timestamp: '2026-06-06T08:15:00Z', type: 'APPROVAL', status: 'WARNING', user: 'System Agent' },
-  { id: 3, action: 'PO PO-2026-1029 generated for Stark Industries', timestamp: '2026-06-05T14:30:00Z', type: 'PURCHASE ORDER', status: 'SUCCESS', user: 'Sarah Jenkins' },
-  { id: 4, action: 'Invoice INV-2026-7791 marked Paid in ledger', timestamp: '2026-06-05T11:00:00Z', type: 'INVOICE', status: 'SUCCESS', user: 'Marcus Cole' },
-  { id: 5, action: 'RFQ QTN-4170 rejected due to compliance score variance', timestamp: '2026-06-04T16:50:00Z', type: 'RFQ', status: 'DANGER', user: 'Emily Ross' },
-  { id: 6, action: 'New Supplier Apex Metals onboarded', timestamp: '2026-06-03T10:15:00Z', type: 'APPROVAL', status: 'SUCCESS', user: 'System Agent' },
-  { id: 7, action: 'Draft PO PO-2026-1026 cancelled due to budget cuts', timestamp: '2026-05-25T16:45:00Z', type: 'PURCHASE ORDER', status: 'DANGER', user: 'Emily Ross' }
-];
+
 
 const initialNotifications = [
   { id: 101, title: 'Action Required: 3 approvals pending', time: '10 mins ago', type: 'APPROVAL', unread: true },

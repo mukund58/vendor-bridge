@@ -1,4 +1,4 @@
-import { mockDashboardData } from '../data/mockDashboardData';
+import { useState, useEffect } from 'react';
 import { 
   FiUsers, 
   FiFileText, 
@@ -26,9 +26,36 @@ import {
   BarChart,
   Bar
 } from 'recharts';
+import { fetchDashboardSummary } from '../services/dashboardService';
 
 const Dashboard = () => {
-  const { dashboardSummary, spendingTrend, vendorPerformance, recentRfqs, pendingApprovals, activities } = mockDashboardData;
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const result = await fetchDashboardSummary();
+        setData(result);
+      } catch (err) {
+        console.error("Failed to load dashboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboard();
+  }, []);
+
+  if (loading || !data) {
+    return (
+      <div className="d-flex align-items-center justify-content-center py-5 text-secondary" style={{ minHeight: '300px' }}>
+        <div className="spinner-border spinner-border-sm me-2" role="status" />
+        <span>Loading procurement control panel...</span>
+      </div>
+    );
+  }
+
+  const { dashboardSummary, spendingTrend, vendorPerformance, recentRfqs, pendingApprovals, activities } = data;
   const { activeRfqs, pendingApprovals: approvalsCount, monthlySpend, overdueInvoices, recentPurchaseOrders } = dashboardSummary;
 
   // Deriving 6 KPI card parameters matching API naming guidelines

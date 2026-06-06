@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { mockDashboardData } from '../data/mockDashboardData';
 import { 
   FiDownload, 
   FiCalendar, 
@@ -32,6 +31,13 @@ import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
 
+const initialSpendingDistribution = [
+  { name: 'Raw Materials', value: 540000 },
+  { name: 'IT Solutions', value: 380000 },
+  { name: 'Heavy Equipment', value: 210000 },
+  { name: 'Logistics', value: 110000 }
+];
+
 // Custom Pie Chart tooltip (declared outside of render to prevent hooks lint warning)
 const CustomPieTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -46,10 +52,10 @@ const CustomPieTooltip = ({ active, payload }) => {
 };
 
 const Reports = () => {
-  const [reportsSummary, setReportsSummary] = useState(mockDashboardData.reportsSummary);
-  const [spendingTrend, setSpendingTrend] = useState(mockDashboardData.spendingTrend);
-  const [vendorPerformance, setVendorPerformance] = useState(mockDashboardData.vendorPerformance);
-  const [spendingDistribution, setSpendingDistribution] = useState(mockDashboardData.spendingDistribution);
+  const [reportsSummary, setReportsSummary] = useState({ totalSpend: 0, activeVendors: 0, poFulfillment: 0, overdueInvoices: 0 });
+  const [spendingTrend, setSpendingTrend] = useState([]);
+  const [vendorPerformance, setVendorPerformance] = useState([]);
+  const [spendingDistribution, setSpendingDistribution] = useState(initialSpendingDistribution);
 
   // Filter & Form States
   const [startDate, setStartDate] = useState('2026-01-01');

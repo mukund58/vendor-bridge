@@ -60,28 +60,16 @@ public class ReportService : IReportService
 
         return new ReportSummaryDto
         {
-            TotalSpend = totalSpend > 0 ? totalSpend : 1240000m, // Fallback if database is fresh
-            ActiveVendors = activeVendors > 0 ? activeVendors : 28,
+            TotalSpend = totalSpend,
+            ActiveVendors = activeVendors,
             PoFulfillment = poFulfillment,
-            OverdueInvoices = overdueInvoices > 0 ? overdueInvoices : 3
+            OverdueInvoices = overdueInvoices
         };
     }
 
     public async Task<IEnumerable<VendorPerformanceDto>> GetVendorPerformanceAsync(DateTime? startDate, DateTime? endDate)
     {
         var vendors = await _context.Vendors.ToListAsync();
-        if (!vendors.Any())
-        {
-            // Seed defaults matching mockVendors if empty
-            return new List<VendorPerformanceDto>
-            {
-                new() { Name = "Apex Metals", Compliance = 98, Delivery = 95, Quality = 97 },
-                new() { Name = "NetScale Sol.", Compliance = 92, Delivery = 89, Quality = 94 },
-                new() { Name = "Titan Heavy", Compliance = 94, Delivery = 91, Quality = 93 },
-                new() { Name = "Habitat Crafts", Compliance = 86, Delivery = 88, Quality = 85 },
-                new() { Name = "Global Logistics", Compliance = 90, Delivery = 92, Quality = 88 }
-            };
-        }
 
         return vendors.Select(v =>
         {
@@ -116,20 +104,7 @@ public class ReportService : IReportService
                 .Where(inv => inv.Status != InvoiceStatus.DRAFT && inv.CreatedAt >= monthStart && inv.CreatedAt <= monthEnd)
                 .SumAsync(inv => inv.TotalAmount);
 
-            // Mock realistic values for previous months if database spend is zero
-            if (monthlySpend == 0)
-            {
-                monthlySpend = i switch
-                {
-                    5 => 84000m,
-                    4 => 96000m,
-                    3 => 145000m,
-                    2 => 112000m,
-                    1 => 198000m,
-                    0 => 230000m,
-                    _ => 100000m
-                };
-            }
+            // Seeding will provide real monthly values for empty DBs
 
             trend.Add(new MonthlyTrendDto
             {

@@ -1,24 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiPlus, FiSearch, FiSliders, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import './Vendors.css';
-
-const initialVendors = [
-  { id: 1, name: 'Apex Metals Ltd', gstNumber: '27AAACA1111A1Z1', category: 'Raw Materials', status: 'ACTIVE' },
-  { id: 2, name: 'NetScale Solutions', gstNumber: '27BBBCB2222B2Z2', category: 'IT Solutions', status: 'ACTIVE' },
-  { id: 3, name: 'Habitat Crafts', gstNumber: '27CCCC3333C3Z3', category: 'Office Goods', status: 'PENDING' },
-  { id: 4, name: 'Titan Heavy Machinery', gstNumber: '27DDDD4444D4Z4', category: 'Heavy Equipment', status: 'ACTIVE' },
-  { id: 5, name: 'Global Logistics Inc', gstNumber: '27EEEE5555E5Z5', category: 'Logistics', status: 'BLOCKED' },
-  { id: 6, name: 'Stark Industries', gstNumber: '27FFFF6666F6Z6', category: 'Raw Materials', status: 'ACTIVE' },
-  { id: 7, name: 'Daily Bugle Media', gstNumber: '27GGGG7777G7Z7', category: 'Marketing', status: 'ACTIVE' },
-  { id: 8, name: 'Metropolis Power', gstNumber: '27HHHH8888H8Z8', category: 'Utilities', status: 'ACTIVE' },
-  { id: 9, name: 'Gamma Laboratories', gstNumber: '27IIII9999I9Z9', category: 'R&D', status: 'ACTIVE' },
-  { id: 10, name: 'Atlantis Marine', gstNumber: '27JJJJ0000J0Z0', category: 'Logistics', status: 'PENDING' },
-  { id: 11, name: 'Themyscira Artifacts', gstNumber: '27KKKK1111K1Z1', category: 'Consulting', status: 'ACTIVE' },
-  { id: 12, name: 'Central Labs', gstNumber: '27LLLL2222L2Z2', category: 'IT Solutions', status: 'BLOCKED' }
-];
+import { fetchVendors, addVendor, updateVendorDetails, blockVendor } from '../services/vendorService';
 
 const Vendors = () => {
-  const [vendors, setVendors] = useState(initialVendors);
+  const [vendors, setVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -35,6 +21,19 @@ const Vendors = () => {
     category: 'Raw Materials',
     status: 'ACTIVE'
   });
+
+  const loadVendors = async () => {
+    try {
+      const data = await fetchVendors();
+      setVendors(data);
+    } catch (err) {
+      console.error('Failed to load vendors', err);
+    }
+  };
+
+  useEffect(() => {
+    loadVendors();
+  }, []);
 
   // Extract categories dynamically
   const categories = Array.from(new Set(vendors.map(v => v.category)));
@@ -58,8 +57,8 @@ const Vendors = () => {
   // Filter logic matching search term and category status
   const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch = 
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.gstNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      (vendor.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (vendor.gstNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter ? vendor.category === categoryFilter : true;
     const matchesStatus = statusFilter ? vendor.status === statusFilter : true;
@@ -77,7 +76,7 @@ const Vendors = () => {
   const openAddModal = () => {
     setModalMode('add');
     setFormData({
-      id: vendors.length + 1,
+      id: '',
       name: '',
       gstNumber: '',
       category: 'Raw Materials',
@@ -92,27 +91,33 @@ const Vendors = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to block or delete this vendor?')) {
-      // For block/delete simulation, we filter out from list or toggle status
-      const updated = vendors.filter(v => v.id !== id);
-      setVendors(updated);
-      if (currentPage > Math.ceil(updated.length / rowsPerPage) && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+      try {
+        await blockVendor(id);
+        await loadVendors();
+        if (currentPage > Math.ceil((vendors.length - 1) / rowsPerPage) && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (err) {
+        console.error('Failed to delete/block vendor', err);
       }
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    if (modalMode === 'add') {
-      setVendors([{ ...formData, id: vendors.length + 1 }, ...vendors]);
+    try {
+      if (modalMode === 'add') {
+        await addVendor(formData);
+      } else {
+        await updateVendorDetails(formData.id, formData);
+      }
       setIsModalOpen(false);
-    } else {
-      const updated = vendors.map(v => (v.id === formData.id ? { ...formData } : v));
-      setVendors(updated);
-      setIsModalOpen(false);
+      await loadVendors();
+    } catch (err) {
+      console.error('Failed to submit vendor form', err);
     }
   };
 

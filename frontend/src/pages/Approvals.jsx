@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiCheckCircle, 
   FiAlertCircle, 
@@ -12,16 +12,11 @@ import {
   FiInfo
 } from 'react-icons/fi';
 import './Approvals.css';
-
-const initialApprovals = [
-  { id: 1, rfqId: 1, rfq_title: 'Raw Steel Sheet Coils', vendor_name: 'Stark Industries', amount: 39500, status: 'PENDING', created_at: '2026-06-06T09:52:00Z', requester: 'Sarah Jenkins', description: 'Grade A coils for production run Q3' },
-  { id: 2, rfqId: 2, rfq_title: 'Cloud server hardware racks', vendor_name: 'NetScale Solutions', amount: 18900, status: 'PENDING', created_at: '2026-06-05T14:15:00Z', requester: 'Sarah Jenkins', description: 'Rack switches and patch panels for server room migration' },
-  { id: 3, rfqId: 3, rfq_title: 'Warehouse Forklifts replacement', vendor_name: 'Titan Heavy Machinery', amount: 115000, status: 'APPROVED', created_at: '2026-06-04T11:30:00Z', requester: 'Marcus Cole', description: 'Electric forklift purchase order request', remarks: 'Looks good and approved by Director' },
-];
+import { fetchPendingApprovals, approveTransaction, rejectTransaction } from '../services/approvalService';
 
 const Approvals = () => {
-  const [approvals, setApprovals] = useState(initialApprovals);
-  const [selectedId, setSelectedId] = useState(1);
+  const [approvals, setApprovals] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [remarksText, setRemarksText] = useState('');
   
   // Modals state
@@ -30,7 +25,25 @@ const Approvals = () => {
   const [targetApproval, setTargetApproval] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const activeApproval = approvals.find(a => a.id === selectedId) || approvals[0];
+  const loadApprovals = async () => {
+    try {
+      const list = await fetchPendingApprovals();
+      setApprovals(list);
+      if (list.length > 0) {
+        setSelectedId(list[0].id);
+      } else {
+        setSelectedId(null);
+      }
+    } catch (err) {
+      console.error("Failed to load approvals", err);
+    }
+  };
+
+  useEffect(() => {
+    loadApprovals();
+  }, []);
+
+  const activeApproval = approvals.find(a => a.id === selectedId) || approvals[0] || null;
 
   // Helper status color mapping
   const getStatusMeta = (status) => {
@@ -55,28 +68,20 @@ const Approvals = () => {
   };
 
   // Submit remarks to simulated API endpoints
-  const handleRemarksSubmit = (e) => {
+  const handleRemarksSubmit = async (e) => {
     e.preventDefault();
 
-    const endpoint = remarksMode === 'approve' 
-      ? `/approvals/${targetApproval.id}/approve` 
-      : `/approvals/${targetApproval.id}/reject`;
-
-    const payload = {
-      remarks: remarksText
-    };
-
-    console.log(`Axios POST ${endpoint} payload:`, payload);
-
-    const updatedStatus = remarksMode === 'approve' ? 'APPROVED' : 'REJECTED';
-    setApprovals(approvals.map(a => {
-      if (a.id === targetApproval.id) {
-        return { ...a, status: updatedStatus, remarks: remarksText };
+    try {
+      if (remarksMode === 'approve') {
+        await approveTransaction(targetApproval.id, remarksText);
+      } else {
+        await rejectTransaction(targetApproval.id, remarksText);
       }
-      return a;
-    }));
-
-    setIsRemarksOpen(false);
+      setIsRemarksOpen(false);
+      await loadApprovals();
+    } catch (err) {
+      console.error("Failed to submit approval action", err);
+    }
   };
 
   return (
@@ -186,95 +191,101 @@ const Approvals = () => {
 
         {/* Right Col: Details Summary & Stepper visualizer */}
         <div className="col-12 col-xl-4">
-          <div className="d-flex flex-column gap-4">
-            
-            {/* Stepper Workflow Visualization */}
-            <div className="card p-4">
-              <h6 className="text-secondary small fw-bold uppercase tracking-wider mb-3.5">Approval Progress Visualizer</h6>
+          {activeApproval ? (
+            <div className="d-flex flex-column gap-4">
               
-              <div className="workflow-timeline my-2">
-                {/* Step 1: Pending */}
-                <div className={`timeline-step ${activeApproval.status === 'PENDING' ? 'active' : 'completed'}`}>
-                  <div className="timeline-step-indicator">
-                    <FiCalendar size={12} />
-                  </div>
-                  <span className="timeline-step-label">Pending</span>
-                </div>
-
-                {/* Step 2: Approved / Rejected */}
-                <div className={`timeline-step ${
-                  activeApproval.status === 'APPROVED' 
-                    ? 'completed' 
-                    : activeApproval.status === 'REJECTED' 
-                      ? 'rejected' 
-                      : ''
-                }`}>
-                  <div className="timeline-step-indicator">
-                    {activeApproval.status === 'APPROVED' ? (
-                      <FiCheck size={12} />
-                    ) : activeApproval.status === 'REJECTED' ? (
-                      <FiX size={12} />
-                    ) : '2'}
-                  </div>
-                  <span className="timeline-step-label">
-                    {activeApproval.status === 'REJECTED' ? 'Rejected' : 'Approved'}
-                  </span>
-                </div>
-
-                {/* Step 3: Purchase Order */}
-                <div className={`timeline-step ${activeApproval.status === 'APPROVED' ? 'active' : ''}`}>
-                  <div className="timeline-step-indicator">
-                    <FiShoppingBag size={12} />
-                  </div>
-                  <span className="timeline-step-label">PO Issued</span>
-                </div>
-              </div>
-
-              {activeApproval.status === 'APPROVED' && (
-                <div className="mt-3 text-center">
-                  <div className="badge-status badge-success py-2 w-100 d-flex align-items-center justify-content-center gap-1.5">
-                    <FiShoppingBag /> Ready to Dispatch Purchase Order
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Details card */}
-            <div className="card p-4">
-              <div className="border-bottom border-light pb-2.5 mb-3">
-                <span className="text-primary extra-small fw-semibold uppercase tracking-wider">Reviewing Proposal</span>
-                <h5 className="text-white fw-bold mb-0 mt-0.5">{activeApproval.rfq_title}</h5>
-              </div>
-
-              <div className="d-flex flex-column gap-3.5">
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="text-secondary small">Vendor Partner:</span>
-                  <span className="text-white fw-medium small">{activeApproval.vendor_name}</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="text-secondary small">Total Cost:</span>
-                  <span className="text-white fw-bold small">${activeApproval.amount.toLocaleString()}</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="text-secondary small">Requester:</span>
-                  <span className="text-white small">{activeApproval.requester}</span>
-                </div>
+              {/* Stepper Workflow Visualization */}
+              <div className="card p-4">
+                <h6 className="text-secondary small fw-bold uppercase tracking-wider mb-3.5">Approval Progress Visualizer</h6>
                 
-                {activeApproval.remarks && (
-                  <div className="p-3 rounded-3 mt-1.5" style={{ backgroundColor: 'var(--bg-secondary)', borderLeft: '3px solid var(--accent-color)' }}>
-                    <span className="text-muted extra-small uppercase fw-bold">Evaluation Remarks:</span>
-                    <p className="text-white small mb-0 mt-1">{activeApproval.remarks}</p>
+                <div className="workflow-timeline my-2">
+                  {/* Step 1: Pending */}
+                  <div className={`timeline-step ${activeApproval.status === 'PENDING' ? 'active' : 'completed'}`}>
+                    <div className="timeline-step-indicator">
+                      <FiCalendar size={12} />
+                    </div>
+                    <span className="timeline-step-label">Pending</span>
+                  </div>
+
+                  {/* Step 2: Approved / Rejected */}
+                  <div className={`timeline-step ${
+                    activeApproval.status === 'APPROVED' 
+                      ? 'completed' 
+                      : activeApproval.status === 'REJECTED' 
+                        ? 'rejected' 
+                        : ''
+                  }`}>
+                    <div className="timeline-step-indicator">
+                      {activeApproval.status === 'APPROVED' ? (
+                        <FiCheck size={12} />
+                      ) : activeApproval.status === 'REJECTED' ? (
+                        <FiX size={12} />
+                      ) : '2'}
+                    </div>
+                    <span className="timeline-step-label">
+                      {activeApproval.status === 'REJECTED' ? 'Rejected' : 'Approved'}
+                    </span>
+                  </div>
+
+                  {/* Step 3: Purchase Order */}
+                  <div className={`timeline-step ${activeApproval.status === 'APPROVED' ? 'active' : ''}`}>
+                    <div className="timeline-step-indicator">
+                      <FiShoppingBag size={12} />
+                    </div>
+                    <span className="timeline-step-label">PO Issued</span>
+                  </div>
+                </div>
+
+                {activeApproval.status === 'APPROVED' && (
+                  <div className="mt-3 text-center">
+                    <div className="badge-status badge-success py-2 w-100 d-flex align-items-center justify-content-center gap-1.5">
+                      <FiShoppingBag /> Ready to Dispatch Purchase Order
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
 
-          </div>
+              {/* Quick Details card */}
+              <div className="card p-4">
+                <div className="border-bottom border-light pb-2.5 mb-3">
+                  <span className="text-primary extra-small fw-semibold uppercase tracking-wider">Reviewing Proposal</span>
+                  <h5 className="text-white fw-bold mb-0 mt-0.5">{activeApproval.rfq_title}</h5>
+                </div>
+
+                <div className="d-flex flex-column gap-3.5">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="text-secondary small">Vendor Partner:</span>
+                    <span className="text-white fw-medium small">{activeApproval.vendor_name}</span>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="text-secondary small">Total Cost:</span>
+                    <span className="text-white fw-bold small">${activeApproval.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="text-secondary small">Requester:</span>
+                    <span className="text-white small">{activeApproval.requester}</span>
+                  </div>
+                  
+                  {activeApproval.remarks && (
+                    <div className="p-3 rounded-3 mt-1.5" style={{ backgroundColor: 'var(--bg-secondary)', borderLeft: '3px solid var(--accent-color)' }}>
+                      <span className="text-muted extra-small uppercase fw-bold">Evaluation Remarks:</span>
+                      <p className="text-white small mb-0 mt-1">{activeApproval.remarks}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div className="card p-4 text-center text-secondary">
+              No pending approval selected or queue is empty.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Details Dialog Modal */}
-      {isDetailsOpen && (
+      {isDetailsOpen && activeApproval && (
         <div className="custom-modal-overlay">
           <div className="custom-modal-content card p-4 glass border border-light" style={{ width: '500px' }}>
             <div className="d-flex justify-content-between align-items-center mb-3.5 pb-2.5 border-bottom border-light">

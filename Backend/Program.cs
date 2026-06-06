@@ -71,6 +71,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.AddCors(options =>
 {
@@ -104,6 +105,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+    Backend.Data.DbSeeder.Seed(db);
 }
 
 // Configure the HTTP request pipeline.

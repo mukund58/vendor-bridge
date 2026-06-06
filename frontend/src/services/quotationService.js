@@ -65,3 +65,12 @@ export const selectWinningQuotation = async (rfqId, quotationId, remarks) => {
   const response = await api.post(`/rfqs/${rfqId}/select-quotation`, { quotationId, remarks });
   return response.data;
 };
+
+export const fetchAllQuotations = async () => {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return [];
+  }
+  const response = await api.get('/quotations');
+  return response.data;
+};
