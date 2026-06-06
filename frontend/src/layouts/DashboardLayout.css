@@ -1,0 +1,29 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+.main-viewport {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 100vh;
+  width: 100%;
+  transition: padding-left 0.3s ease;
+}
+
+.content-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: var(--bg-primary);
+}
+
+/* On desktop devices, indent the content viewport for the fixed sidebar */
+@media (min-width: 992px) {
+  .main-viewport {
+    padding-left: var(--sidebar-width);
+  }
+}

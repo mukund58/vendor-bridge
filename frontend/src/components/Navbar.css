@@ -1,0 +1,99 @@
+.navbar-header {
+  height: var(--navbar-height);
+  padding-block: 0.75rem;
+  background-color: var(--bg-primary);
+  width: 100%;
+}
+
+/* Search Bar styling */
+.search-bar-wrapper {
+  background-color: var(--bg-secondary);
+  width: 320px;
+  transition: width 0.25s ease, border-color 0.25s ease;
+}
+
+.search-bar-wrapper:focus-within {
+  width: 380px;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.search-input {
+  width: 100%;
+  outline: none;
+  font-size: 0.85rem;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-kbd {
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+/* Notifications Bell badge animations */
+.btn-notification {
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn-notification:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Profile section styles */
+.user-profile-wrapper {
+  transition: opacity 0.2s;
+}
+
+.user-profile-wrapper:hover {
+  opacity: 0.9;
+}
+
+.avatar-wrapper {
+  width: 36px;
+  height: 36px;
+  transition: border-color 0.2s;
+}
+
+.avatar-wrapper img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.user-name {
+  font-size: 0.85rem;
+}
+
+.user-role {
+  font-size: 0.75rem;
+}
+
+/* Dropdown Menu overrides for Dark theme */
+.dropdown-dark .dropdown-item {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.dropdown-dark .dropdown-item:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-dark .dropdown-item.text-danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger) !important;
+}
+
+.extra-small {
+  font-size: 0.7rem;
+}
+
+/* Layout cursor utility */
+.cursor-pointer {
+  cursor: pointer;
+}
