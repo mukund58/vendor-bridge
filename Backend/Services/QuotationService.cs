@@ -10,6 +10,7 @@ public interface IQuotationService
     Task<QuotationDto?> SubmitQuotationAsync(SubmitQuotationDto dto, int vendorId);
     Task<IEnumerable<QuotationDto>> GetVendorQuotationsAsync(int vendorId);
     Task<QuotationDto?> GetQuotationByIdAsync(int id);
+    Task<IEnumerable<QuotationDto>> GetAllQuotationsAsync();
     Task<IEnumerable<RFQDto>> GetAvailableRFQsForVendorAsync(int vendorId);
 }
 
@@ -22,6 +23,17 @@ public class QuotationService : IQuotationService
     {
         _context = context;
         _activityLogService = activityLogService;
+    }
+
+    public async Task<IEnumerable<QuotationDto>> GetAllQuotationsAsync()
+    {
+        var quotations = await _context.Quotations
+            .Include(q => q.Vendor)
+            .Include(q => q.Items)
+            .ThenInclude(qi => qi.RFQItem)
+            .ToListAsync();
+
+        return quotations.Select(MapToDto);
     }
 
     public async Task<QuotationDto?> SubmitQuotationAsync(SubmitQuotationDto dto, int vendorId)

@@ -18,6 +18,13 @@ public class QuotationController : ControllerBase
         _quotationService = quotationService;
     }
 
+    [HttpGet("quotations")]
+    public async Task<IActionResult> GetQuotations()
+    {
+        var quotations = await _quotationService.GetAllQuotationsAsync();
+        return Ok(quotations);
+    }
+
     // Role VENDOR submits a quotation
     [HttpPost("quotations")]
     public async Task<IActionResult> SubmitQuotation([FromBody] SubmitQuotationDto dto)

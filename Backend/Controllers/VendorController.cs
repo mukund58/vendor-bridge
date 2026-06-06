@@ -54,4 +54,12 @@ public class VendorController : ControllerBase
         if (!result) return BadRequest(new { message = "Invalid status or vendor not found" });
         return NoContent();
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteVendor(int id)
+    {
+        var result = await _vendorService.UpdateVendorStatusAsync(id, "BLOCKED");
+        if (!result) return NotFound();
+        return Ok(new { success = true });
+    }
 }
