@@ -1,0 +1,105 @@
+/* Stepper Progress bar */
+.stepper-wrapper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.stepper-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--border-color);
+  z-index: 1;
+}
+
+.step-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.step-indicator {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.step-item.active .step-indicator {
+  border-color: var(--accent-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.step-item.completed .step-indicator {
+  border-color: var(--success);
+  background-color: var(--success);
+  color: white;
+}
+
+.step-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+
+.step-item.active .step-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.step-item.completed .step-label {
+  color: #34d399;
+}
+
+/* File Dropzone styles */
+.file-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 10px;
+  background-color: var(--bg-secondary);
+  transition: border-color 0.2s, background-color 0.2s;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.file-dropzone:hover {
+  border-color: var(--accent-color);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+
+/* Scrollable vendor list */
+.vendor-select-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.vendor-select-item {
+  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.vendor-select-item:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}

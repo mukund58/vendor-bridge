@@ -1,0 +1,51 @@
+/* Side-by-side Quotation cards */
+.comparison-grid {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.comparison-card {
+  flex: 1;
+  min-width: 280px;
+  max-width: 380px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comparison-card.recommended {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.comparison-card.winner-active {
+  border-color: var(--success);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+  background-color: rgba(16, 185, 129, 0.02);
+}
+
+/* Star rating styles */
+.rating-stars {
+  color: #fbbf24;
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+/* Highlight style for lowest price */
+.highlight-lowest {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.highlight-text-lowest {
+  color: #34d399 !important;
+}
+
+/* Modal details */
+.winning-badge-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+}

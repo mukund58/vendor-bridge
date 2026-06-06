@@ -1,0 +1,86 @@
+/* Workflow visualization timeline */
+.workflow-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+}
+
+.workflow-timeline::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2rem;
+  right: 2rem;
+  height: 2px;
+  background-color: var(--border-color);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.timeline-step-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.timeline-step.active .timeline-step-indicator {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background-color: var(--bg-primary);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.timeline-step.completed .timeline-step-indicator {
+  border-color: var(--success);
+  background-color: var(--success);
+  color: white;
+}
+
+.timeline-step.rejected .timeline-step-indicator {
+  border-color: var(--danger);
+  background-color: var(--danger);
+  color: white;
+}
+
+.timeline-step-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.timeline-step.active .timeline-step-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.timeline-step.completed .timeline-step-label {
+  color: #34d399;
+}
+
+.timeline-step.rejected .timeline-step-label {
+  color: var(--danger);
+}

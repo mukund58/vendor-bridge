@@ -1,0 +1,37 @@
+.signup-container {
+  background-color: var(--bg-primary);
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.signup-card {
+  width: 580px;
+  max-width: 100%;
+}
+
+.input-group-custom {
+  transition: border-color 0.25s ease;
+  background-color: var(--bg-secondary) !important;
+}
+
+.input-group-custom:focus-within {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+.outline-none {
+  outline: none !important;
+}
+
+.fs-7 {
+  font-size: 0.875rem !important;
+}
+
+.fs-8 {
+  font-size: 0.75rem !important;
+}
+
+/* Custom styling for select option item backgrounds inside dark theme */
+select.bg-secondary option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}

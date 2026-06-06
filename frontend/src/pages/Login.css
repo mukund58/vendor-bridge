@@ -1,0 +1,44 @@
+.login-container {
+  background-color: var(--bg-primary);
+  width: 100vw;
+  height: 100vh;
+}
+
+.login-card {
+  width: 440px;
+  max-width: 100%;
+}
+
+.login-logo-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.input-group-custom {
+  transition: border-color 0.25s ease;
+  background-color: var(--bg-secondary) !important;
+}
+
+.input-group-custom:focus-within {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+.outline-none {
+  outline: none !important;
+}
+
+.fs-7 {
+  font-size: 0.875rem !important;
+}
+
+.fs-8 {
+  font-size: 0.75rem !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
