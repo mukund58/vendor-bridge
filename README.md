@@ -56,6 +56,484 @@ This is the heart of the project.
 * Generate Invoice PDF
 * Send invoice email
 
+
+# Backend Folder Structure
+
+```text
+src/
+├── Controllers
+│   ├── AuthController
+│   ├── VendorController
+│   ├── RFQController
+│   ├── QuotationController
+│   ├── ApprovalController
+│   ├── PurchaseOrderController
+│   ├── InvoiceController
+│   ├── ReportController
+│   └── ActivityController
+│
+├── Services
+│   ├── AuthService
+│   ├── VendorService
+│   ├── RFQService
+│   ├── QuotationService
+│   ├── ApprovalService
+│   ├── PurchaseOrderService
+│   ├── InvoiceService
+│   └── ReportService
+│
+├── Repositories
+├── DTOs
+├── Entities
+├── Middleware
+├── Config
+└── Utils
+```
+
+---
+
+# Backend Ownership
+
+## Module 1 — Auth
+
+### Tables
+
+```sql
+users
+```
+
+### APIs
+
+```http
+POST /auth/register
+POST /auth/login
+GET /auth/me
+```
+
+### Features
+
+* JWT Authentication
+* Password hashing
+* RBAC
+
+Roles:
+
+```text
+ADMIN
+PROCUREMENT_OFFICER
+MANAGER
+VENDOR
+```
+
+---
+
+# Module 2 — Vendor
+
+### Tables
+
+```sql
+vendors
+```
+
+### Entity
+
+```text
+Vendor
+ ├─ id
+ ├─ company_name
+ ├─ gst_number
+ ├─ category
+ ├─ contact_person
+ ├─ email
+ ├─ phone
+ └─ status
+```
+
+### APIs
+
+```http
+GET /vendors
+GET /vendors/{id}
+POST /vendors
+PUT /vendors/{id}
+PATCH /vendors/{id}/status
+```
+
+---
+
+# Module 3 — RFQ
+
+## Tables
+
+```sql
+rfqs
+rfq_items
+rfq_vendors
+```
+
+### Relationship
+
+```text
+RFQ
+ ├─ many items
+ └─ many vendors
+```
+
+### APIs
+
+```http
+POST /rfqs
+GET /rfqs
+GET /rfqs/{id}
+POST /rfqs/{id}/publish
+```
+
+---
+
+## RFQ Workflow
+
+```text
+Draft
+ ↓
+Published
+ ↓
+Quotation Received
+ ↓
+Under Review
+ ↓
+Completed
+```
+
+Store as enum.
+
+---
+
+# Module 4 — Quotation
+
+### Tables
+
+```sql
+quotations
+quotation_items
+```
+
+### Relationship
+
+```text
+RFQ
+ └── Quotations
+
+Quotation
+ └── QuotationItems
+```
+
+### APIs
+
+```http
+POST /quotations
+GET /quotations/{id}
+GET /vendor/quotations
+```
+
+### Business Rules
+
+Vendor can:
+
+```text
+Create quotation
+Edit quotation until deadline
+Submit quotation
+```
+
+---
+
+# Module 5 — Comparison
+
+### API
+
+```http
+GET /rfqs/{id}/comparison
+```
+
+Backend should calculate:
+
+```text
+Lowest Price
+Fastest Delivery
+Average Rating
+```
+
+Response:
+
+```json
+{
+  "winnerSuggestion": "Infra Supplies",
+  "lowestPrice": true
+}
+```
+
+---
+
+# Module 6 — Approval Workflow
+
+### Tables
+
+```sql
+approvals
+```
+
+### Entity
+
+```text
+Approval
+
+id
+rfq_id
+quotation_id
+approver_id
+level
+status
+remarks
+approved_at
+```
+
+### APIs
+
+```http
+GET /approvals/pending
+POST /approvals/{id}/approve
+POST /approvals/{id}/reject
+```
+
+---
+
+# Approval State Machine
+
+```text
+PENDING
+ ↓
+L1_APPROVED
+ ↓
+L2_APPROVED
+ ↓
+PO_GENERATED
+```
+
+or
+
+```text
+PENDING
+ ↓
+REJECTED
+```
+
+---
+
+# Module 7 — Purchase Order
+
+### Tables
+
+```sql
+purchase_orders
+purchase_order_items
+```
+
+### Generate Automatically
+
+When final approval happens:
+
+```text
+Approval Approved
+        ↓
+Generate PO
+```
+
+### APIs
+
+```http
+POST /purchase-orders
+GET /purchase-orders
+GET /purchase-orders/{id}
+```
+
+---
+
+### PO Number Generator
+
+```text
+PO-2025-0001
+PO-2025-0002
+PO-2025-0003
+```
+
+Create helper service.
+
+---
+
+# Module 8 — Invoice
+
+### Tables
+
+```sql
+invoices
+invoice_items
+```
+
+### Generate Automatically
+
+```text
+PO
+ ↓
+Invoice
+```
+
+### APIs
+
+```http
+POST /invoices
+GET /invoices
+GET /invoices/{id}
+PATCH /invoices/{id}/mark-paid
+```
+
+---
+
+## Invoice Status
+
+```text
+DRAFT
+SENT
+PENDING_PAYMENT
+PAID
+OVERDUE
+```
+
+---
+
+# Module 9 — PDF Service
+
+Used by:
+
+```http
+GET /invoices/{id}/pdf
+```
+
+Generate:
+
+```text
+Vendor Info
+Items
+GST
+Total
+PO Number
+Invoice Number
+```
+
+---
+
+# Module 10 — Email Service
+
+```http
+POST /invoices/{id}/email
+```
+
+Workflow:
+
+```text
+Generate PDF
+Attach PDF
+Send Email
+```
+
+Can use:
+
+```text
+SMTP
+Mailtrap
+SendGrid
+```
+
+---
+
+# Module 11 — Activity Logs
+
+### Table
+
+```sql
+activity_logs
+```
+
+### Entity
+
+```text
+id
+user_id
+action
+entity_type
+entity_id
+created_at
+```
+
+Examples:
+
+```text
+Vendor Created
+RFQ Published
+Quotation Submitted
+Approval Approved
+PO Generated
+Invoice Paid
+```
+
+### APIs
+
+```http
+GET /activities
+```
+
+---
+
+# Module 12 — Reports
+
+### APIs
+
+```http
+GET /reports/summary
+GET /reports/vendors
+GET /reports/monthly-trend
+GET /reports/export
+```
+
+
+---
+
+# Critical End-to-End Flow To Finish First
+
+```text
+Login
+ ↓
+Create Vendor
+ ↓
+Create RFQ
+ ↓
+Assign Vendors
+ ↓
+Submit Quotation
+ ↓
+Compare Quotations
+ ↓
+Approve
+ ↓
+Generate PO
+ ↓
+Generate Invoice
+ ↓
+Download PDF
+```
+
+
+
+
 ---
 
 # Member 2 — Frontend + Dashboard + UX
