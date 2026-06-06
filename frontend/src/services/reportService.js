@@ -1,7 +1,7 @@
 import api from './api';
 import { mockDashboardData } from '../data/mockDashboardData';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 export const fetchReportsSummary = async (startDate, endDate) => {
   if (USE_MOCK) {

@@ -27,6 +27,8 @@ import {
   Cell
 } from 'recharts';
 import './Reports.css';
+import { fetchReportsSummary, fetchVendorPerformance, fetchMonthlyTrend } from '../services/reportService';
+import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
 
@@ -44,7 +46,10 @@ const CustomPieTooltip = ({ active, payload }) => {
 };
 
 const Reports = () => {
-  const { reportsSummary, spendingTrend, vendorPerformance, spendingDistribution } = mockDashboardData;
+  const [reportsSummary, setReportsSummary] = useState(mockDashboardData.reportsSummary);
+  const [spendingTrend, setSpendingTrend] = useState(mockDashboardData.spendingTrend);
+  const [vendorPerformance, setVendorPerformance] = useState(mockDashboardData.vendorPerformance);
+  const [spendingDistribution, setSpendingDistribution] = useState(mockDashboardData.spendingDistribution);
 
   // Filter & Form States
   const [startDate, setStartDate] = useState('2026-01-01');
@@ -59,9 +64,29 @@ const Reports = () => {
 
   // Triggered when date filter updates - logs the endpoint parameters
   useEffect(() => {
-    console.log(`Axios GET /reports/summary?startDate=${startDate}&endDate=${endDate}`);
-    console.log(`Axios GET /reports/vendors?startDate=${startDate}&endDate=${endDate}`);
-    console.log(`Axios GET /reports/monthly-trend?startDate=${startDate}&endDate=${endDate}`);
+    const loadReportData = async () => {
+      try {
+        const summary = await fetchReportsSummary(startDate, endDate);
+        setReportsSummary(summary);
+      } catch (err) {
+        console.error("Failed to load reports summary:", err);
+      }
+
+      try {
+        const vendors = await fetchVendorPerformance(startDate, endDate);
+        setVendorPerformance(vendors);
+      } catch (err) {
+        console.error("Failed to load vendor performance scorecard:", err);
+      }
+
+      try {
+        const trend = await fetchMonthlyTrend(startDate, endDate);
+        setSpendingTrend(trend);
+      } catch (err) {
+        console.error("Failed to load monthly trend:", err);
+      }
+    };
+    loadReportData();
   }, [startDate, endDate]);
 
   const handlePresetChange = (preset) => {
@@ -78,74 +103,38 @@ const Reports = () => {
     }
   };
 
-  const triggerExport = (format) => {
+  const triggerExport = async (format) => {
     setExporting(format);
-    const endpoint = `/reports/export?format=${format}`;
-    console.log(`Axios GET ${endpoint} initiated.`);
-    
-    setTimeout(() => {
-      try {
-        let fileContent = '';
-        let mimeType = '';
-        let fileName = '';
+    try {
+      const response = await api.get('/reports/export', {
+        params: { format, startDate, endDate },
+        responseType: 'blob'
+      });
+      
+      const fileExt = format.toLowerCase().includes('excel') || format.toLowerCase().includes('csv') ? 'csv' : 'pdf';
+      const mimeType = fileExt === 'pdf' ? 'application/pdf' : 'text/csv';
+      const fileName = `procurement_report_${new Date().toISOString().slice(0,10)}.${fileExt}`;
 
-        if (format === 'csv' || format === 'excel') {
-          // Generate a simple CSV spreadsheet representing Reports Summary & Vendor Performance Scorecard
-          fileName = `procurement_report_${new Date().toISOString().slice(0,10)}.csv`;
-          mimeType = 'text/csv;charset=utf-8;';
-          fileContent = 'VendorBridge ERP Procurement Report\n';
-          fileContent += `Date Range,${startDate} to ${endDate}\n\n`;
-          fileContent += `Total Spend,Active Vendors,PO Fulfillment %,Overdue Invoices\n`;
-          fileContent += `"${reportsSummary.totalSpend}","${reportsSummary.activeVendors}","${reportsSummary.poFulfillment}","${reportsSummary.overdueInvoices}"\n\n`;
-          fileContent += 'Vendor Performance Scorecard\n';
-          fileContent += 'Vendor,Compliance %,Delivery %,Quality %\n';
-          vendorPerformance.forEach(v => {
-            fileContent += `"${v.name}","${v.compliance}","${v.delivery}","${v.quality}"\n`;
-          });
-        } else {
-          // Generate a mockup text document representing PDF
-          fileName = `procurement_report_${new Date().toISOString().slice(0,10)}.pdf`;
-          mimeType = 'text/plain;charset=utf-8;';
-          fileContent = '==================================================\n';
-          fileContent += '          VENDORBRIDGE ERP REPORT (PDF MOCK)       \n';
-          fileContent += '==================================================\n';
-          fileContent += `Generated On: ${new Date().toLocaleString()}\n`;
-          fileContent += `Date Range:   ${startDate} to ${endDate}\n`;
-          fileContent += '--------------------------------------------------\n';
-          fileContent += 'KPI SUMMARY:\n';
-          fileContent += `  - Total Spend:       $${reportsSummary.totalSpend.toLocaleString()}\n`;
-          fileContent += `  - Active Vendors:    ${reportsSummary.activeVendors}\n`;
-          fileContent += `  - PO Fulfillment:    ${reportsSummary.poFulfillment}%\n`;
-          fileContent += `  - Overdue Invoices:  ${reportsSummary.overdueInvoices}\n`;
-          fileContent += '--------------------------------------------------\n';
-          fileContent += 'VENDOR PERFORMANCE SCORECARD:\n';
-          vendorPerformance.forEach(v => {
-            fileContent += `  * ${v.name.padEnd(20)}: Compliance ${v.compliance}%, Delivery ${v.delivery}%, Quality ${v.quality}%\n`;
-          });
-          fileContent += '==================================================\n';
-        }
-
-        const blob = new Blob([fileContent], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', fileName);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        setToastMessage(`Export Successful! Generated and downloaded ${fileName}.`);
-      } catch (err) {
-        console.error('Export download error:', err);
-        setToastMessage(`Export failed: ${err.message}`);
-      } finally {
-        setExporting(null);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 4000);
-      }
-    }, 1200);
+      const blob = new Blob([response.data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setToastMessage(`Export Successful! Generated and downloaded ${fileName}.`);
+    } catch (err) {
+      console.error('Export download error:', err);
+      setToastMessage(`Export failed: ${err.message}`);
+    } finally {
+      setExporting(null);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
   };
 
   const handleResetFilters = () => {

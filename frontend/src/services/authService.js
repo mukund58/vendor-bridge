@@ -1,6 +1,6 @@
 import api from './api';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 export const loginUser = async (email, password) => {
   if (USE_MOCK) {
