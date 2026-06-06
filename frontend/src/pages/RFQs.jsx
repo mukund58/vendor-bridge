@@ -14,19 +14,21 @@ import {
 } from 'react-icons/fi';
 import './RFQs.css';
 
+// Initial listing dataset matching GET /rfqs backend format
 const initialRFQs = [
-  { id: 'RFQ-2026-0041', title: 'Raw Steel Sheet Coils', department: 'Operations', deadline: '2026-06-15', submissions: 3, status: 'Active', badge: 'badge-success' },
-  { id: 'RFQ-2026-0040', title: 'Cloud server hardware racks', department: 'IT Infrastructure', deadline: '2026-06-18', submissions: 1, status: 'Pending Review', badge: 'badge-warning' },
-  { id: 'RFQ-2026-0039', title: 'Warehouse Forklifts replacement', department: 'Facilities', deadline: '2026-06-25', submissions: 0, status: 'Draft', badge: 'badge-info' },
+  { id: 1, title: 'Raw Steel Sheet Coils', category: 'Raw Materials', description: 'Grade A coils', deadline: '2026-06-15', submissions: 3, status: 'Active' },
+  { id: 2, title: 'Cloud server hardware racks', category: 'IT Solutions', description: 'Power racks', deadline: '2026-06-18', submissions: 1, status: 'Pending Review' },
+  { id: 3, title: 'Warehouse Forklifts replacement', category: 'Heavy Equipment', description: 'Dual fork lifts', deadline: '2026-06-25', submissions: 0, status: 'Draft' }
 ];
 
+// Mock suppliers list with integer IDs matching DB schemas
 const mockVendors = [
-  { id: 'VND-001', name: 'Apex Metals Ltd', category: 'Raw Materials' },
-  { id: 'VND-002', name: 'NetScale Solutions', category: 'IT Solutions' },
-  { id: 'VND-003', name: 'Habitat Crafts', category: 'Office Goods' },
-  { id: 'VND-004', name: 'Titan Heavy Machinery', category: 'Heavy Equipment' },
-  { id: 'VND-005', name: 'Global Logistics Inc', category: 'Logistics' },
-  { id: 'VND-006', name: 'Stark Industries', category: 'Raw Materials' }
+  { id: 1, name: 'Apex Metals Ltd', category: 'Raw Materials' },
+  { id: 2, name: 'NetScale Solutions', category: 'IT Solutions' },
+  { id: 3, name: 'Habitat Crafts', category: 'Office Goods' },
+  { id: 4, name: 'Titan Heavy Machinery', category: 'Heavy Equipment' },
+  { id: 5, name: 'Global Logistics Inc', category: 'Logistics' },
+  { id: 6, name: 'Stark Industries', category: 'Raw Materials' }
 ];
 
 const RFQs = () => {
@@ -34,49 +36,49 @@ const RFQs = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Form State
-  const [rfqTitle, setRfqTitle] = useState('');
-  const [rfqDesc, setRfqDesc] = useState('');
-  const [rfqCategory, setRfqCategory] = useState('Raw Materials');
-  const [rfqDeadline, setRfqDeadline] = useState('');
-  const [products, setProducts] = useState([
-    { id: 1, name: '', qty: 1, unit: 'Units' }
+  // Form State matching API payload fields exactly
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Raw Materials');
+  const [description, setDescription] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [items, setItems] = useState([
+    { id: 1, itemName: '', quantity: 1, unit: 'NOS' }
   ]);
-  const [selectedVendors, setSelectedVendors] = useState([]);
+  const [selectedVendors, setSelectedVendors] = useState([]); // array of vendor IDs: [1, 2]
   const [attachments, setAttachments] = useState([]);
 
-  // Filter List state
+  // Search Filter state
   const [listFilter, setListFilter] = useState('');
 
   // Step 2 products list handlers
   const handleAddProductRow = () => {
-    setProducts([
-      ...products,
-      { id: Date.now(), name: '', qty: 1, unit: 'Units' }
+    setItems([
+      ...items,
+      { id: Date.now(), itemName: '', quantity: 1, unit: 'NOS' }
     ]);
   };
 
   const handleRemoveProductRow = (id) => {
-    if (products.length > 1) {
-      setProducts(products.filter(p => p.id !== id));
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
     }
   };
 
   const handleProductChange = (id, field, value) => {
-    setProducts(products.map(p => {
-      if (p.id === id) {
-        return { ...p, [field]: value };
+    setItems(items.map(item => {
+      if (item.id === id) {
+        return { ...item, [field]: value };
       }
-      return p;
+      return item;
     }));
   };
 
-  // Vendor Assignment handlers
-  const toggleVendorSelection = (vendorName) => {
-    if (selectedVendors.includes(vendorName)) {
-      setSelectedVendors(selectedVendors.filter(v => v !== vendorName));
+  // Vendor Assignment handlers (stores IDs: [1, 2, 3])
+  const toggleVendorSelection = (vendorId) => {
+    if (selectedVendors.includes(vendorId)) {
+      setSelectedVendors(selectedVendors.filter(id => id !== vendorId));
     } else {
-      setSelectedVendors([...selectedVendors, vendorName]);
+      setSelectedVendors([...selectedVendors, vendorId]);
     }
   };
 
@@ -116,11 +118,11 @@ const RFQs = () => {
   };
 
   const resetForm = () => {
-    setRfqTitle('');
-    setRfqDesc('');
-    setRfqCategory('Raw Materials');
-    setRfqDeadline('');
-    setProducts([{ id: 1, name: '', qty: 1, unit: 'Units' }]);
+    setTitle('');
+    setDescription('');
+    setCategory('Raw Materials');
+    setDeadline('');
+    setItems([{ id: 1, itemName: '', quantity: 1, unit: 'NOS' }]);
     setSelectedVendors([]);
     setAttachments([]);
     setCurrentStep(1);
@@ -128,20 +130,26 @@ const RFQs = () => {
   };
 
   const submitRfq = (status) => {
-    const badgeMap = {
-      'Active': 'badge-success',
-      'Draft': 'badge-info',
-      'Pending Review': 'badge-warning'
+    // Aligns state back to payload for API readiness
+    const payload = {
+      title,
+      category,
+      description,
+      deadline,
+      vendors: selectedVendors, // array of IDs
+      items: items.map(({ itemName, quantity, unit }) => ({ itemName, quantity, unit }))
     };
 
+    console.log('Sending API Payload to Axios Client:', payload);
+
     const newRfq = {
-      id: `RFQ-2026-00${rfqs.length + 39}`,
-      title: rfqTitle || 'Untitled Procurement',
-      department: rfqCategory || 'General',
-      deadline: rfqDeadline || '2026-06-30',
+      id: rfqs.length + 1,
+      title: payload.title || 'Untitled Procurement',
+      category: payload.category || 'General',
+      description: payload.description,
+      deadline: payload.deadline || '2026-06-30',
       submissions: 0,
-      status: status,
-      badge: badgeMap[status] || 'badge-info'
+      status: status
     };
 
     setRfqs([newRfq, ...rfqs]);
@@ -151,8 +159,7 @@ const RFQs = () => {
   // Filter list of RFQs
   const filteredRfqs = rfqs.filter(r => 
     r.title.toLowerCase().includes(listFilter.toLowerCase()) ||
-    r.id.toLowerCase().includes(listFilter.toLowerCase()) ||
-    r.department.toLowerCase().includes(listFilter.toLowerCase())
+    r.category.toLowerCase().includes(listFilter.toLowerCase())
   );
 
   return (
@@ -187,7 +194,7 @@ const RFQs = () => {
               <input 
                 type="text" 
                 className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                placeholder="Search RFQs by name, code or department..." 
+                placeholder="Search RFQs by name, code or category..." 
                 value={listFilter}
                 onChange={(e) => setListFilter(e.target.value)}
               />
@@ -202,7 +209,7 @@ const RFQs = () => {
                   <tr>
                     <th scope="col">RFQ Reference</th>
                     <th scope="col">RFQ Title</th>
-                    <th scope="col">Department</th>
+                    <th scope="col">Category</th>
                     <th scope="col">Response Deadline</th>
                     <th scope="col" className="text-center">Submissions</th>
                     <th scope="col">Status</th>
@@ -218,18 +225,18 @@ const RFQs = () => {
                   ) : (
                     filteredRfqs.map((rfq) => (
                       <tr key={rfq.id}>
-                        <td className="text-primary fw-medium">{rfq.id}</td>
+                        <td className="text-primary fw-medium">RFQ-2026-00{rfq.id}</td>
                         <td className="fw-semibold text-white">{rfq.title}</td>
-                        <td>{rfq.department}</td>
+                        <td>{rfq.category}</td>
                         <td>
                           <div className="d-flex align-items-center gap-2">
                             <FiCalendar className="text-muted" size={14} />
-                            <span className="text-secondary small">{rfq.deadline}</span>
+                            <span className="text-secondary small">{new Date(rfq.deadline).toLocaleDateString()}</span>
                           </div>
                         </td>
                         <td className="text-center text-white fw-bold">{rfq.submissions}</td>
                         <td>
-                          <span className={`badge-status ${rfq.badge}`}>
+                          <span className={`badge-status ${rfq.status === 'Active' ? 'badge-success' : rfq.status === 'Draft' ? 'badge-info' : 'badge-warning'}`}>
                             {rfq.status}
                           </span>
                         </td>
@@ -295,8 +302,8 @@ const RFQs = () => {
                         required
                         className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
                         placeholder="e.g. Annual Steel Procurement Q3"
-                        value={rfqTitle}
-                        onChange={(e) => setRfqTitle(e.target.value)}
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                       />
                     </div>
                   </div>
@@ -309,14 +316,15 @@ const RFQs = () => {
                         id="rfq-category"
                         className="bg-transparent border-0 text-white w-100 fs-7 outline-none cursor-pointer"
                         style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        value={rfqCategory}
-                        onChange={(e) => setRfqCategory(e.target.value)}
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
                       >
                         <option value="Raw Materials" style={{ backgroundColor: 'var(--bg-secondary)' }}>Raw Materials</option>
                         <option value="IT Solutions" style={{ backgroundColor: 'var(--bg-secondary)' }}>IT Solutions</option>
                         <option value="Office Goods" style={{ backgroundColor: 'var(--bg-secondary)' }}>Office Goods</option>
                         <option value="Heavy Equipment" style={{ backgroundColor: 'var(--bg-secondary)' }}>Heavy Equipment</option>
                         <option value="Logistics" style={{ backgroundColor: 'var(--bg-secondary)' }}>Logistics</option>
+                        <option value="Construction" style={{ backgroundColor: 'var(--bg-secondary)' }}>Construction</option>
                       </select>
                     </div>
                   </div>
@@ -330,8 +338,8 @@ const RFQs = () => {
                         type="date" 
                         required
                         className="bg-transparent border-0 text-white w-100 fs-7 outline-none cursor-pointer" 
-                        value={rfqDeadline}
-                        onChange={(e) => setRfqDeadline(e.target.value)}
+                        value={deadline}
+                        onChange={(e) => setDeadline(e.target.value)}
                       />
                     </div>
                   </div>
@@ -346,8 +354,8 @@ const RFQs = () => {
                         required
                         className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
                         placeholder="Provide detailed material qualities, delivery parameters, and structural expectations..."
-                        value={rfqDesc}
-                        onChange={(e) => setRfqDesc(e.target.value)}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                       />
                     </div>
                   </div>
@@ -380,7 +388,7 @@ const RFQs = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((item, index) => (
+                      {items.map((item, index) => (
                         <tr key={item.id}>
                           <td>
                             <div className="form-input-wrapper px-3 py-1.5 rounded-3">
@@ -389,8 +397,8 @@ const RFQs = () => {
                                 required
                                 className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
                                 placeholder="e.g. Grade A Steel Sheets (4mm)"
-                                value={item.name}
-                                onChange={(e) => handleProductChange(item.id, 'name', e.target.value)}
+                                value={item.itemName}
+                                onChange={(e) => handleProductChange(item.id, 'itemName', e.target.value)}
                                 aria-label={`Item ${index + 1} Name`}
                               />
                             </div>
@@ -402,9 +410,9 @@ const RFQs = () => {
                                 min={1}
                                 required
                                 className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                                placeholder="100"
-                                value={item.qty}
-                                onChange={(e) => handleProductChange(item.id, 'qty', parseInt(e.target.value) || '')}
+                                placeholder="25"
+                                value={item.quantity}
+                                onChange={(e) => handleProductChange(item.id, 'quantity', parseInt(e.target.value) || '')}
                                 aria-label={`Item ${index + 1} Quantity`}
                               />
                             </div>
@@ -418,11 +426,11 @@ const RFQs = () => {
                                 onChange={(e) => handleProductChange(item.id, 'unit', e.target.value)}
                                 aria-label={`Item ${index + 1} Unit`}
                               >
-                                <option value="Units" style={{ backgroundColor: 'var(--bg-secondary)' }}>Units</option>
-                                <option value="kg" style={{ backgroundColor: 'var(--bg-secondary)' }}>kg</option>
-                                <option value="Tons" style={{ backgroundColor: 'var(--bg-secondary)' }}>Tons</option>
-                                <option value="Liters" style={{ backgroundColor: 'var(--bg-secondary)' }}>Liters</option>
-                                <option value="Meters" style={{ backgroundColor: 'var(--bg-secondary)' }}>Meters</option>
+                                <option value="NOS" style={{ backgroundColor: 'var(--bg-secondary)' }}>NOS</option>
+                                <option value="KG" style={{ backgroundColor: 'var(--bg-secondary)' }}>KG</option>
+                                <option value="TONS" style={{ backgroundColor: 'var(--bg-secondary)' }}>TONS</option>
+                                <option value="LTR" style={{ backgroundColor: 'var(--bg-secondary)' }}>LTR</option>
+                                <option value="MTR" style={{ backgroundColor: 'var(--bg-secondary)' }}>MTR</option>
                               </select>
                             </div>
                           </td>
@@ -430,7 +438,7 @@ const RFQs = () => {
                             <button 
                               type="button" 
                               className="btn btn-danger btn-sm p-1.5 rounded-circle d-inline-flex bg-opacity-10 border-0"
-                              disabled={products.length === 1}
+                              disabled={items.length === 1}
                               onClick={() => handleRemoveProductRow(item.id)}
                               title="Delete Item Row"
                               style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
@@ -457,18 +465,18 @@ const RFQs = () => {
                     
                     <div className="vendor-select-list rounded-3 p-2 d-flex flex-column gap-1.5 mt-2">
                       {mockVendors
-                        .filter(v => v.category === rfqCategory || rfqCategory === 'General')
+                        .filter(v => v.category === category)
                         .map(vendor => (
                           <div 
                             key={vendor.id} 
                             className="vendor-select-item p-2 d-flex align-items-center justify-content-between cursor-pointer rounded"
-                            onClick={() => toggleVendorSelection(vendor.name)}
+                            onClick={() => toggleVendorSelection(vendor.id)}
                           >
                             <div className="d-flex align-items-center gap-2.5">
                               <input 
                                 type="checkbox" 
                                 className="form-check-input bg-secondary border-color cursor-pointer"
-                                checked={selectedVendors.includes(vendor.name)}
+                                checked={selectedVendors.includes(vendor.id)}
                                 onChange={() => {}} // handled by outer click div
                               />
                               <span className="text-white small fw-medium">{vendor.name}</span>
@@ -476,9 +484,9 @@ const RFQs = () => {
                             <span className="badge-status badge-info extra-small">{vendor.category}</span>
                           </div>
                         ))}
-                      {mockVendors.filter(v => v.category === rfqCategory).length === 0 && (
+                      {mockVendors.filter(v => v.category === category).length === 0 && (
                         <div className="text-center p-4 text-secondary small">
-                          No vendors matching {rfqCategory} category.
+                          No vendors matching {category} category.
                         </div>
                       )}
                     </div>
@@ -551,7 +559,7 @@ const RFQs = () => {
                   type="button" 
                   className="btn btn-primary btn-sm d-flex align-items-center gap-1.5"
                   onClick={handleNextStep}
-                  disabled={currentStep === 1 && (!rfqTitle || !rfqDeadline || !rfqDesc)}
+                  disabled={currentStep === 1 && (!title || !deadline || !description)}
                 >
                   Next <FiArrowRight />
                 </button>

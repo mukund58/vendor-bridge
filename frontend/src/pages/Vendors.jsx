@@ -3,18 +3,18 @@ import { FiPlus, FiSearch, FiSliders, FiEdit2, FiTrash2, FiX } from 'react-icons
 import './Vendors.css';
 
 const initialVendors = [
-  { id: 'VND-001', name: 'John Carter', company: 'Apex Metals Ltd', gst: '27AAACA1111A1Z1', email: 'john@apexmetals.com', phone: '+1-555-0199', category: 'Raw Materials', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-002', name: 'Emma Stone', company: 'NetScale Solutions', gst: '27BBBCB2222B2Z2', email: 'support@netscale.io', phone: '+1-555-0188', category: 'IT Solutions', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-003', name: 'Daniel Craig', company: 'Habitat Crafts', gst: '27CCCC3333C3Z3', email: 'sales@habitat.com', phone: '+1-555-0177', category: 'Office Goods', status: 'Probation', badge: 'badge-warning' },
-  { id: 'VND-004', name: 'Sarah Connor', company: 'Titan Heavy Machinery', gst: '27DDDD4444D4Z4', email: 'info@titanheavy.com', phone: '+1-555-0166', category: 'Heavy Equipment', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-005', name: 'Bruce Wayne', company: 'Global Logistics Inc', gst: '27EEEE5555E5Z5', email: 'bruce@globallogistics.com', phone: '+1-555-0155', category: 'Logistics', status: 'Inactive', badge: 'badge-danger' },
-  { id: 'VND-006', name: 'Tony Stark', company: 'Stark Industries', gst: '27FFFF6666F6Z6', email: 'contact@stark.com', phone: '+1-555-0144', category: 'Raw Materials', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-007', name: 'Peter Parker', company: 'Daily Bugle Media', gst: '27GGGG7777G7Z7', email: 'peter@bugle.com', phone: '+1-555-0133', category: 'Marketing', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-008', name: 'Clark Kent', company: 'Metropolis Power', gst: '27HHHH8888H8Z8', email: 'clark@dailyplanet.com', phone: '+1-555-0122', category: 'Utilities', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-009', name: 'Bruce Banner', company: 'Gamma Laboratories', gst: '27IIII9999I9Z9', email: 'banner@gamma.org', phone: '+1-555-0111', category: 'R&D', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-010', name: 'Arthur Curry', company: 'Atlantis Marine', gst: '27JJJJ0000J0Z0', email: 'arthur@atlantismarine.com', phone: '+1-555-0100', category: 'Logistics', status: 'Probation', badge: 'badge-warning' },
-  { id: 'VND-011', name: 'Diana Prince', company: 'Themyscira Artifacts', gst: '27KKKK1111K1Z1', email: 'diana@museum.org', phone: '+1-555-0099', category: 'Consulting', status: 'Active', badge: 'badge-success' },
-  { id: 'VND-012', name: 'Barry Allen', company: 'Central Labs', gst: '27LLLL2222L2Z2', email: 'barry@centrallabs.com', phone: '+1-555-0088', category: 'IT Solutions', status: 'Inactive', badge: 'badge-danger' },
+  { id: 1, name: 'Apex Metals Ltd', gstNumber: '27AAACA1111A1Z1', category: 'Raw Materials', status: 'ACTIVE' },
+  { id: 2, name: 'NetScale Solutions', gstNumber: '27BBBCB2222B2Z2', category: 'IT Solutions', status: 'ACTIVE' },
+  { id: 3, name: 'Habitat Crafts', gstNumber: '27CCCC3333C3Z3', category: 'Office Goods', status: 'PENDING' },
+  { id: 4, name: 'Titan Heavy Machinery', gstNumber: '27DDDD4444D4Z4', category: 'Heavy Equipment', status: 'ACTIVE' },
+  { id: 5, name: 'Global Logistics Inc', gstNumber: '27EEEE5555E5Z5', category: 'Logistics', status: 'BLOCKED' },
+  { id: 6, name: 'Stark Industries', gstNumber: '27FFFF6666F6Z6', category: 'Raw Materials', status: 'ACTIVE' },
+  { id: 7, name: 'Daily Bugle Media', gstNumber: '27GGGG7777G7Z7', category: 'Marketing', status: 'ACTIVE' },
+  { id: 8, name: 'Metropolis Power', gstNumber: '27HHHH8888H8Z8', category: 'Utilities', status: 'ACTIVE' },
+  { id: 9, name: 'Gamma Laboratories', gstNumber: '27IIII9999I9Z9', category: 'R&D', status: 'ACTIVE' },
+  { id: 10, name: 'Atlantis Marine', gstNumber: '27JJJJ0000J0Z0', category: 'Logistics', status: 'PENDING' },
+  { id: 11, name: 'Themyscira Artifacts', gstNumber: '27KKKK1111K1Z1', category: 'Consulting', status: 'ACTIVE' },
+  { id: 12, name: 'Central Labs', gstNumber: '27LLLL2222L2Z2', category: 'IT Solutions', status: 'BLOCKED' }
 ];
 
 const Vendors = () => {
@@ -31,15 +31,12 @@ const Vendors = () => {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
-    company: '',
-    gst: '',
-    email: '',
-    phone: '',
+    gstNumber: '',
     category: 'Raw Materials',
-    status: 'Active'
+    status: 'ACTIVE'
   });
 
-  // Extract unique categories for filter select dropdown
+  // Extract categories dynamically
   const categories = Array.from(new Set(vendors.map(v => v.category)));
 
   // Filter handlers
@@ -58,13 +55,11 @@ const Vendors = () => {
     setCurrentPage(1);
   };
 
-  // Filtered dataset
+  // Filter logic matching search term and category status
   const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch = 
       vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.gst.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(searchTerm.toLowerCase());
+      vendor.gstNumber.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter ? vendor.category === categoryFilter : true;
     const matchesStatus = statusFilter ? vendor.status === statusFilter : true;
@@ -78,18 +73,15 @@ const Vendors = () => {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = filteredVendors.slice(indexOfFirstRow, indexOfLastRow);
 
-  // Form handlers
+  // Form operations
   const openAddModal = () => {
     setModalMode('add');
     setFormData({
-      id: `VND-0${vendors.length + 1}`,
+      id: vendors.length + 1,
       name: '',
-      company: '',
-      gst: '',
-      email: '',
-      phone: '',
+      gstNumber: '',
       category: 'Raw Materials',
-      status: 'Active'
+      status: 'ACTIVE'
     });
     setIsModalOpen(true);
   };
@@ -101,7 +93,8 @@ const Vendors = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to remove this vendor partner?')) {
+    if (window.confirm('Are you sure you want to block or delete this vendor?')) {
+      // For block/delete simulation, we filter out from list or toggle status
       const updated = vendors.filter(v => v.id !== id);
       setVendors(updated);
       if (currentPage > Math.ceil(updated.length / rowsPerPage) && currentPage > 1) {
@@ -112,42 +105,37 @@ const Vendors = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    
-    // Status color configurations
-    const badgeMap = {
-      'Active': 'badge-success',
-      'Probation': 'badge-warning',
-      'Inactive': 'badge-danger'
-    };
 
     if (modalMode === 'add') {
-      const newVendor = {
-        ...formData,
-        badge: badgeMap[formData.status] || 'badge-info'
-      };
-      setVendors([newVendor, ...vendors]);
+      setVendors([{ ...formData, id: vendors.length + 1 }, ...vendors]);
       setIsModalOpen(false);
     } else {
-      const updated = vendors.map((v) => {
-        if (v.id === formData.id) {
-          return {
-            ...formData,
-            badge: badgeMap[formData.status] || 'badge-info'
-          };
-        }
-        return v;
-      });
+      const updated = vendors.map(v => (v.id === formData.id ? { ...formData } : v));
       setVendors(updated);
       setIsModalOpen(false);
     }
   };
 
+  // Helper status color mapping
+  const getStatusMeta = (status) => {
+    switch (status) {
+      case 'ACTIVE':
+        return { badge: 'badge-success', label: 'Active' };
+      case 'PENDING':
+        return { badge: 'badge-warning', label: 'Pending' };
+      case 'BLOCKED':
+        return { badge: 'badge-danger', label: 'Blocked' };
+      default:
+        return { badge: 'badge-secondary', label: status };
+    }
+  };
+
   return (
     <div className="d-flex flex-column gap-4">
-      {/* Header section with counts */}
+      {/* Header Panel */}
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
         <div>
-          <h1 className="h3 mb-1 text-white fw-bold">Vendor Management</h1>
+          <h1 className="h3 mb-1 text-white fw-bold">Vendor Directory</h1>
           <p className="text-secondary small">Maintain procurement partners, GST details, and status reviews.</p>
         </div>
         <button 
@@ -159,10 +147,10 @@ const Vendors = () => {
         </button>
       </div>
 
-      {/* Overview Cards Row */}
+      {/* KPI Overview */}
       <div className="row g-3">
         <div className="col-12 col-md-3">
-          <div className="card p-3" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="card p-3 animate-fade" style={{ backgroundColor: 'var(--bg-card)' }}>
             <span className="text-secondary extra-small fw-semibold uppercase tracking-wider">Total Partners</span>
             <div className="fs-3 fw-bold text-white mt-1">{vendors.length}</div>
           </div>
@@ -170,46 +158,45 @@ const Vendors = () => {
         <div className="col-12 col-md-3">
           <div className="card p-3" style={{ backgroundColor: 'var(--bg-card)' }}>
             <span className="text-success extra-small fw-semibold uppercase tracking-wider">Active Suppliers</span>
-            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'Active').length}</div>
+            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'ACTIVE').length}</div>
           </div>
         </div>
         <div className="col-12 col-md-3">
           <div className="card p-3" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <span className="text-warning extra-small fw-semibold uppercase tracking-wider">On Probation</span>
-            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'Probation').length}</div>
+            <span className="text-warning extra-small fw-semibold uppercase tracking-wider">Pending Audit</span>
+            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'PENDING').length}</div>
           </div>
         </div>
         <div className="col-12 col-md-3">
           <div className="card p-3" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <span className="text-danger extra-small fw-semibold uppercase tracking-wider">Inactive</span>
-            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'Inactive').length}</div>
+            <span className="text-danger extra-small fw-semibold uppercase tracking-wider">Blocked</span>
+            <div className="fs-3 fw-bold text-white mt-1">{vendors.filter(v => v.status === 'BLOCKED').length}</div>
           </div>
         </div>
       </div>
 
-      {/* Control Card: Filters & Search */}
+      {/* Filtering Toolbar */}
       <div className="card p-3.5">
         <div className="d-flex flex-column flex-lg-row gap-3 justify-content-between align-items-stretch">
-          {/* Search box */}
+          {/* Search field */}
           <div className="d-flex align-items-center bg-secondary px-3 py-1.5 rounded-3 border border-light flex-grow-1" style={{ maxWidth: '450px' }}>
             <FiSearch className="text-muted me-2" size={16} />
             <input 
               type="text" 
               className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-              placeholder="Search by name, company, GST..." 
+              placeholder="Search by vendor name, GSTIN..." 
               value={searchTerm}
               onChange={handleSearch}
             />
           </div>
 
-          {/* Filter dropdowns */}
+          {/* Category / Status dropdowns */}
           <div className="d-flex flex-wrap gap-2">
-            {/* Category Dropdown */}
             <div className="d-flex align-items-center bg-secondary px-2.5 py-1 rounded-3 border border-light">
               <FiSliders className="text-muted me-2" size={14} />
               <select 
                 className="form-select form-select-sm bg-transparent border-0 text-white cursor-pointer py-0 outline-none" 
-                style={{ width: '150px', outline: 'none' }}
+                style={{ width: '150px' }}
                 value={categoryFilter}
                 onChange={handleCategoryChange}
               >
@@ -220,35 +207,31 @@ const Vendors = () => {
               </select>
             </div>
 
-            {/* Status Dropdown */}
             <div className="d-flex align-items-center bg-secondary px-2.5 py-1 rounded-3 border border-light">
               <select 
                 className="form-select form-select-sm bg-transparent border-0 text-white cursor-pointer py-0 outline-none" 
-                style={{ width: '130px', outline: 'none' }}
+                style={{ width: '130px' }}
                 value={statusFilter}
                 onChange={handleStatusChange}
               >
                 <option value="" style={{ backgroundColor: 'var(--bg-secondary)' }}>All Statuses</option>
-                <option value="Active" style={{ backgroundColor: 'var(--bg-secondary)' }}>Active</option>
-                <option value="Probation" style={{ backgroundColor: 'var(--bg-secondary)' }}>Probation</option>
-                <option value="Inactive" style={{ backgroundColor: 'var(--bg-secondary)' }}>Inactive</option>
+                <option value="ACTIVE" style={{ backgroundColor: 'var(--bg-secondary)' }}>Active</option>
+                <option value="PENDING" style={{ backgroundColor: 'var(--bg-secondary)' }}>Pending</option>
+                <option value="BLOCKED" style={{ backgroundColor: 'var(--bg-secondary)' }}>Blocked</option>
               </select>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Vendor Directory Table */}
+      {/* Main Table Directory */}
       <div className="card p-4">
         <div className="table-responsive border-0">
           <table className="table custom-table text-nowrap align-middle">
             <thead>
               <tr>
                 <th scope="col">Vendor Name</th>
-                <th scope="col">Company Name</th>
                 <th scope="col">GST Number</th>
-                <th scope="col">Email Address</th>
-                <th scope="col">Phone</th>
                 <th scope="col">Category</th>
                 <th scope="col">Status</th>
                 <th scope="col" className="text-end">Actions</th>
@@ -257,53 +240,53 @@ const Vendors = () => {
             <tbody>
               {currentRows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-5 text-secondary">
-                    No suppliers match your search filters.
+                  <td colSpan={5} className="text-center py-5 text-secondary">
+                    No suppliers match search filters.
                   </td>
                 </tr>
               ) : (
-                currentRows.map((vendor) => (
-                  <tr key={vendor.id}>
-                    <td className="fw-semibold text-white">{vendor.name}</td>
-                    <td>{vendor.company}</td>
-                    <td className="font-monospace text-secondary small">{vendor.gst}</td>
-                    <td>{vendor.email}</td>
-                    <td className="text-secondary small">{vendor.phone}</td>
-                    <td>{vendor.category}</td>
-                    <td>
-                      <span className={`badge-status ${vendor.badge}`}>
-                        {vendor.status}
-                      </span>
-                    </td>
-                    <td className="text-end">
-                      <div className="d-inline-flex gap-2">
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary btn-sm p-1.5 rounded-circle d-inline-flex"
-                          onClick={() => openEditModal(vendor)}
-                          title="Edit Details"
-                        >
-                          <FiEdit2 size={12} />
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-danger btn-sm p-1.5 rounded-circle d-inline-flex bg-opacity-10 border-0"
-                          onClick={() => handleDelete(vendor.id)}
-                          title="Delete Partner"
-                          style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
-                        >
-                          <FiTrash2 size={12} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                currentRows.map((vendor) => {
+                  const statusMeta = getStatusMeta(vendor.status);
+                  return (
+                    <tr key={vendor.id}>
+                      <td className="fw-semibold text-white">{vendor.name}</td>
+                      <td className="font-monospace text-secondary small">{vendor.gstNumber}</td>
+                      <td>{vendor.category}</td>
+                      <td>
+                        <span className={`badge-status ${statusMeta.badge}`}>
+                          {statusMeta.label}
+                        </span>
+                      </td>
+                      <td className="text-end">
+                        <div className="d-inline-flex gap-2">
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary btn-sm p-1.5 rounded-circle d-inline-flex"
+                            onClick={() => openEditModal(vendor)}
+                            title="Edit Details"
+                          >
+                            <FiEdit2 size={12} />
+                          </button>
+                          <button 
+                            type="button" 
+                            className="btn btn-danger btn-sm p-1.5 rounded-circle d-inline-flex bg-opacity-10 border-0"
+                            onClick={() => handleDelete(vendor.id)}
+                            title="Block Supplier"
+                            style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination controls */}
         {totalPages > 1 && (
           <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-light">
             <span className="text-secondary small">
@@ -341,7 +324,7 @@ const Vendors = () => {
         )}
       </div>
 
-      {/* Add / Edit Form Modal Dialog */}
+      {/* Form overlay modal */}
       {isModalOpen && (
         <div className="custom-modal-overlay">
           <div className="custom-modal-content card p-4 glass border border-light">
@@ -357,96 +340,48 @@ const Vendors = () => {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="d-flex flex-column gap-3">
+            <form onSubmit={handleFormSubmit} className="d-flex flex-column gap-3.5">
               <div className="row g-3">
-                {/* Contact Name */}
-                <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-name">Contact Person</label>
+                {/* Vendor Name */}
+                <div className="col-12">
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-name-input">Vendor Partner Name</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <input 
-                      id="vendor-name"
+                      id="vendor-name-input"
                       type="text" 
                       required 
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                      placeholder="e.g. John Doe"
+                      placeholder="e.g. Apex Metals Ltd"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
                 </div>
 
-                {/* Company Name */}
-                <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-company">Company Name</label>
-                  <div className="form-input-wrapper px-3 py-2 rounded-3">
-                    <input 
-                      id="vendor-company"
-                      type="text" 
-                      required 
-                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                      placeholder="e.g. Acme Corp"
-                      value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    />
-                  </div>
-                </div>
-
                 {/* GST Number */}
                 <div className="col-12">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-gst">GSTIN Number</label>
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-gst-input">GSTIN Number</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <input 
-                      id="vendor-gst"
+                      id="vendor-gst-input"
                       type="text" 
                       required 
                       pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none font-monospace" 
                       placeholder="e.g. 27AAACA1111A1Z1"
-                      value={formData.gst}
-                      onChange={(e) => setFormData({ ...formData, gst: e.target.value.toUpperCase() })}
+                      value={formData.gstNumber}
+                      onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value.toUpperCase() })}
                     />
                   </div>
                   <span className="text-muted extra-small mt-1 d-inline-block">Format: 15-digit Alpha-Numeric GSTIN</span>
                 </div>
 
-                {/* Email Address */}
+                {/* Category Selector */}
                 <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-email">Email Address</label>
-                  <div className="form-input-wrapper px-3 py-2 rounded-3">
-                    <input 
-                      id="vendor-email"
-                      type="email" 
-                      required 
-                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                      placeholder="name@company.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-phone">Phone Number</label>
-                  <div className="form-input-wrapper px-3 py-2 rounded-3">
-                    <input 
-                      id="vendor-phone"
-                      type="text" 
-                      required 
-                      className="bg-transparent border-0 text-white w-100 fs-7 outline-none" 
-                      placeholder="+1-555-0100"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Category Selection */}
-                <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-category">Category</label>
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-category-input">Category</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <select 
-                      id="vendor-category"
+                      id="vendor-category-input"
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none cursor-pointer"
                       style={{ backgroundColor: 'var(--bg-secondary)' }}
                       value={formData.category}
@@ -457,32 +392,35 @@ const Vendors = () => {
                       <option value="Office Goods" style={{ backgroundColor: 'var(--bg-secondary)' }}>Office Goods</option>
                       <option value="Heavy Equipment" style={{ backgroundColor: 'var(--bg-secondary)' }}>Heavy Equipment</option>
                       <option value="Logistics" style={{ backgroundColor: 'var(--bg-secondary)' }}>Logistics</option>
+                      <option value="Construction" style={{ backgroundColor: 'var(--bg-secondary)' }}>Construction</option>
                       <option value="Consulting" style={{ backgroundColor: 'var(--bg-secondary)' }}>Consulting</option>
                       <option value="R&D" style={{ backgroundColor: 'var(--bg-secondary)' }}>R&D</option>
+                      <option value="Marketing" style={{ backgroundColor: 'var(--bg-secondary)' }}>Marketing</option>
+                      <option value="Utilities" style={{ backgroundColor: 'var(--bg-secondary)' }}>Utilities</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Status Selection */}
+                {/* Status Selector */}
                 <div className="col-12 col-sm-6">
-                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-status">Partner Status</label>
+                  <label className="text-secondary small mb-1 fw-medium" htmlFor="vendor-status-input">Partner Status</label>
                   <div className="form-input-wrapper px-3 py-2 rounded-3">
                     <select 
-                      id="vendor-status"
+                      id="vendor-status-input"
                       className="bg-transparent border-0 text-white w-100 fs-7 outline-none cursor-pointer"
                       style={{ backgroundColor: 'var(--bg-secondary)' }}
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     >
-                      <option value="Active" style={{ backgroundColor: 'var(--bg-secondary)' }}>Active</option>
-                      <option value="Probation" style={{ backgroundColor: 'var(--bg-secondary)' }}>Probation</option>
-                      <option value="Inactive" style={{ backgroundColor: 'var(--bg-secondary)' }}>Inactive</option>
+                      <option value="ACTIVE" style={{ backgroundColor: 'var(--bg-secondary)' }}>Active</option>
+                      <option value="PENDING" style={{ backgroundColor: 'var(--bg-secondary)' }}>Pending</option>
+                      <option value="BLOCKED" style={{ backgroundColor: 'var(--bg-secondary)' }}>Blocked</option>
                     </select>
                   </div>
                 </div>
               </div>
 
-              {/* Actions Footer */}
+              {/* Action Buttons */}
               <div className="d-flex justify-content-end gap-2 mt-4 pt-2.5 border-top border-light">
                 <button 
                   type="button" 

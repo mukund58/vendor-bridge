@@ -28,7 +28,18 @@ import {
 } from 'recharts';
 
 const Dashboard = () => {
-  const { kpis, spendingTrend, vendorPerformance, recentRfqs, recentPOs, pendingApprovals, activities } = mockDashboardData;
+  const { dashboardSummary, spendingTrend, vendorPerformance, recentRfqs, pendingApprovals, activities } = mockDashboardData;
+  const { activeRfqs, pendingApprovals: approvalsCount, monthlySpend, overdueInvoices, recentPurchaseOrders } = dashboardSummary;
+
+  // Deriving 6 KPI card parameters matching API naming guidelines
+  const kpis = [
+    { id: 'vendors', label: 'Active Vendors', value: '142', change: '+12.4%', up: true, subtitle: 'vs last month' },
+    { id: 'rfqs', label: 'Active RFQs', value: activeRfqs.toString(), change: '+4.8%', up: true, subtitle: 'vs last week' },
+    { id: 'approvals', label: 'Pending Approvals', value: approvalsCount.toString(), change: '-2.1%', up: false, subtitle: 'vs yesterday' },
+    { id: 'pos', label: 'Purchase Orders', value: recentPurchaseOrders.length.toString(), change: '+15.2%', up: true, subtitle: 'this quarter' },
+    { id: 'invoices', label: 'Overdue Invoices', value: overdueInvoices.toString(), change: '+8.1%', up: true, subtitle: 'awaiting payment' },
+    { id: 'spend', label: 'Monthly Spend', value: `$${monthlySpend.toLocaleString()}`, change: '+18.7%', up: true, subtitle: 'this month' },
+  ];
 
   // Helper to map KPI key to icons and accent border styling
   const getKpiMeta = (id) => {
@@ -176,8 +187,8 @@ const Dashboard = () => {
                   <tr>
                     <th scope="col">RFQ Reference</th>
                     <th scope="col">Subject</th>
-                    <th scope="col">Assigned Buyer</th>
-                    <th scope="col">Date Issued</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Deadline</th>
                     <th scope="col" className="text-center">Bids Received</th>
                     <th scope="col">Status</th>
                   </tr>
@@ -186,14 +197,14 @@ const Dashboard = () => {
                   {recentRfqs.map((rfq) => (
                     <tr key={rfq.id}>
                       <td>
-                        <a href={`#rfq-${rfq.id}`} className="text-primary fw-medium text-decoration-none">{rfq.id}</a>
+                        <a href={`#rfq-${rfq.id}`} className="text-primary fw-medium text-decoration-none">RFQ-2026-00{rfq.id}</a>
                       </td>
                       <td className="fw-semibold text-white">{rfq.title}</td>
-                      <td>{rfq.buyer}</td>
-                      <td className="text-secondary small">{rfq.date}</td>
-                      <td className="text-center text-white fw-bold">{rfq.bids}</td>
+                      <td>{rfq.category}</td>
+                      <td className="text-secondary small">{new Date(rfq.deadline).toLocaleDateString()}</td>
+                      <td className="text-center text-white fw-bold">{rfq.submissions}</td>
                       <td>
-                        <span className={`badge-status ${rfq.badge}`}>
+                        <span className={`badge-status ${rfq.status === 'Active' ? 'badge-success' : rfq.status === 'Draft' ? 'badge-info' : 'badge-warning'}`}>
                           {rfq.status}
                         </span>
                       </td>
@@ -228,21 +239,30 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentPOs.map((po) => (
-                    <tr key={po.id}>
-                      <td>
-                        <a href={`#po-${po.id}`} className="text-primary fw-medium text-decoration-none">{po.id}</a>
-                      </td>
-                      <td className="fw-semibold text-white">{po.vendor}</td>
-                      <td className="text-secondary small">{po.date}</td>
-                      <td className="fw-bold">{po.amount}</td>
-                      <td>
-                        <span className={`badge-status ${po.badge}`}>
-                          {po.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {recentPurchaseOrders.map((po) => {
+                    const statusStyles = {
+                      'IN_TRANSIT': { badge: 'badge-info', label: 'In Transit' },
+                      'DELIVERED': { badge: 'badge-success', label: 'Delivered' },
+                      'ACKNOWLEDGED': { badge: 'badge-warning', label: 'Acknowledged' },
+                      'CANCELLED': { badge: 'badge-danger', label: 'Cancelled' }
+                    };
+                    const statusMeta = statusStyles[po.status] || { badge: 'badge-secondary', label: po.status };
+                    return (
+                      <tr key={po.id}>
+                        <td>
+                          <a href={`#po-${po.id}`} className="text-primary fw-medium text-decoration-none">{po.po_number}</a>
+                        </td>
+                        <td className="fw-semibold text-white">{po.vendor_name}</td>
+                        <td className="text-secondary small">{new Date(po.created_at).toLocaleDateString()}</td>
+                        <td className="fw-bold">${po.amount.toLocaleString()}</td>
+                        <td>
+                          <span className={`badge-status ${statusMeta.badge}`}>
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -323,7 +343,9 @@ const Dashboard = () => {
                       <span className="text-secondary small">
                         <strong className="text-white">{act.user}</strong> {act.action}
                       </span>
-                      <span className="text-muted extra-small mt-0.5">{act.time}</span>
+                      <span className="text-muted extra-small mt-0.5">
+                        {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                   </div>
                 );
