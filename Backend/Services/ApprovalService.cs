@@ -22,11 +22,13 @@ public class ApprovalService : IApprovalService
 {
     private readonly AppDbContext _context;
     private readonly IPurchaseOrderService _purchaseOrderService;
+    private readonly IActivityLogService _activityLogService;
 
-    public ApprovalService(AppDbContext context, IPurchaseOrderService purchaseOrderService)
+    public ApprovalService(AppDbContext context, IPurchaseOrderService purchaseOrderService, IActivityLogService activityLogService)
     {
         _context = context;
         _purchaseOrderService = purchaseOrderService;
+        _activityLogService = activityLogService;
     }
 
     public async Task<IEnumerable<ApprovalDto>> GetPendingApprovalsAsync()
@@ -126,7 +128,23 @@ public class ApprovalService : IApprovalService
             return false;
         }
 
+        var isFinal = (approval.Status == ApprovalStatus.PO_GENERATED || approval.Status == ApprovalStatus.L2_APPROVED);
+        var rfqTitle = approval.RFQ?.Title ?? "Unknown RFQ";
+        var logAction = isFinal 
+            ? $"Approval Approved for RFQ {rfqTitle}" 
+            : $"Approval Pending for RFQ {rfqTitle}"; // Using Approval Pending since it is pending L2
+
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(userId, logAction, "APPROVAL", approval.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log approval: {ex.Message}");
+        }
+
         return true;
     }
 
@@ -160,7 +178,19 @@ public class ApprovalService : IApprovalService
             approval.Quotation.Status = QuotationStatus.Rejected;
         }
 
+        var rfqTitle = approval.RFQ?.Title ?? "Unknown RFQ";
+
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(userId, $"Approval Rejected for RFQ {rfqTitle}", "APPROVAL", approval.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log approval rejection: {ex.Message}");
+        }
+
         return true;
     }
 

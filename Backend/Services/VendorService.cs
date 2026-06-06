@@ -17,10 +17,12 @@ public interface IVendorService
 public class VendorService : IVendorService
 {
     private readonly AppDbContext _context;
+    private readonly IActivityLogService _activityLogService;
 
-    public VendorService(AppDbContext context)
+    public VendorService(AppDbContext context, IActivityLogService activityLogService)
     {
         _context = context;
+        _activityLogService = activityLogService;
     }
 
     public async Task<IEnumerable<VendorDto>> GetVendorsAsync(string? status, string? search)
@@ -64,6 +66,15 @@ public class VendorService : IVendorService
 
         _context.Vendors.Add(vendor);
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(null, $"New Supplier {vendor.CompanyName} onboarded", "APPROVAL", vendor.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log vendor onboarding: {ex.Message}");
+        }
 
         return MapToDto(vendor);
     }

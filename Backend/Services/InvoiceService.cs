@@ -21,11 +21,13 @@ public class InvoiceService : IInvoiceService
 {
     private readonly AppDbContext _context;
     private readonly IPONumberGenerator _poNumberGenerator;
+    private readonly IActivityLogService _activityLogService;
 
-    public InvoiceService(AppDbContext context, IPONumberGenerator poNumberGenerator)
+    public InvoiceService(AppDbContext context, IPONumberGenerator poNumberGenerator, IActivityLogService activityLogService)
     {
         _context = context;
         _poNumberGenerator = poNumberGenerator;
+        _activityLogService = activityLogService;
     }
 
     public async Task<InvoiceDto?> CreateInvoiceFromPOAsync(int purchaseOrderId)
@@ -118,6 +120,16 @@ public class InvoiceService : IInvoiceService
 
         invoice.Status = InvoiceStatus.PAID;
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(null, $"Invoice {invoice.InvoiceNumber} marked Paid in ledger", "INVOICE", invoice.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log invoice paid: {ex.Message}");
+        }
+
         return true;
     }
 

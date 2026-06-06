@@ -21,12 +21,14 @@ public class PurchaseOrderService : IPurchaseOrderService
     private readonly AppDbContext _context;
     private readonly IPONumberGenerator _poNumberGenerator;
     private readonly IInvoiceService _invoiceService;
+    private readonly IActivityLogService _activityLogService;
 
-    public PurchaseOrderService(AppDbContext context, IPONumberGenerator poNumberGenerator, IInvoiceService invoiceService)
+    public PurchaseOrderService(AppDbContext context, IPONumberGenerator poNumberGenerator, IInvoiceService invoiceService, IActivityLogService activityLogService)
     {
         _context = context;
         _poNumberGenerator = poNumberGenerator;
         _invoiceService = invoiceService;
+        _activityLogService = activityLogService;
     }
 
     public async Task<PurchaseOrderDto?> CreatePOFromQuotationAsync(int quotationId)
@@ -79,6 +81,16 @@ public class PurchaseOrderService : IPurchaseOrderService
 
         _context.PurchaseOrders.Add(po);
         await _context.SaveChangesAsync();
+
+        try
+        {
+            var vendorName = quotation.Vendor?.CompanyName ?? "Supplier";
+            await _activityLogService.LogActivityAsync(null, $"PO {po.PONumber} generated for {vendorName}", "PURCHASE ORDER", po.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log PO generation: {ex.Message}");
+        }
 
         // Update quotation status if not already selected
         if (quotation.Status != QuotationStatus.Selected)

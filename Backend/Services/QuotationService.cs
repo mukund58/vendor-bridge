@@ -16,10 +16,12 @@ public interface IQuotationService
 public class QuotationService : IQuotationService
 {
     private readonly AppDbContext _context;
+    private readonly IActivityLogService _activityLogService;
 
-    public QuotationService(AppDbContext context)
+    public QuotationService(AppDbContext context, IActivityLogService activityLogService)
     {
         _context = context;
+        _activityLogService = activityLogService;
     }
 
     public async Task<QuotationDto?> SubmitQuotationAsync(SubmitQuotationDto dto, int vendorId)
@@ -61,6 +63,15 @@ public class QuotationService : IQuotationService
         }
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(null, $"Quotation Submitted for {rfq.Title}", "RFQ", quotation.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log quotation submission: {ex.Message}");
+        }
 
         return await GetQuotationByIdAsync(quotation.Id);
     }

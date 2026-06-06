@@ -18,10 +18,12 @@ public interface IRFQService
 public class RFQService : IRFQService
 {
     private readonly AppDbContext _context;
+    private readonly IActivityLogService _activityLogService;
 
-    public RFQService(AppDbContext context)
+    public RFQService(AppDbContext context, IActivityLogService activityLogService)
     {
         _context = context;
+        _activityLogService = activityLogService;
     }
 
     public async Task<RFQDto> CreateRFQAsync(CreateRFQDto dto, int userId)
@@ -79,6 +81,16 @@ public class RFQService : IRFQService
 
         rfq.Status = RFQStatus.Published;
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _activityLogService.LogActivityAsync(null, $"RFQ Published for {rfq.Title}", "RFQ", rfq.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to log RFQ publication: {ex.Message}");
+        }
+
         return true;
     }
 
