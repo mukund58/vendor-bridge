@@ -1,4 +1,4 @@
-# vendor odoo hackathon
+# Vendor Bridge ERP
 
 # Member 1 — Backend + Database + Business Logic
 
